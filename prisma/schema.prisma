@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+enum TransactionType {
+  DEPOSIT
+  REWARD
+  WITHDRAWAL
+  ADJUSTMENT
+  TASK_REWARD
+  GAME_REWARD
+}
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+enum GameStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+enum SessionStatus {
+  STARTED
+  COMPLETED
+  ABANDONED
+  INVALIDATED
+}
+enum TaskStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+enum TaskCompletionStatus {
+  STARTED
+  PENDING_REVIEW
+  COMPLETED
+  REJECTED
+}
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+enum NotificationType {
+  SYSTEM
+  REWARD
+  GAME
+  TASK
+  WALLET
+  ANNOUNCEMENT
+}
+enum AnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  telegramId     BigInt   @unique @map("telegram_id")
+  username       String?
+  firstName      String   @map("first_name")
+  lastName       String?  @map("last_name")
+  language       String?  @db.VarChar(10)
+  avatar         String?
+  country        String?  @db.VarChar(2)
+  referralCode   String   @unique @map("referral_code")
+  referredById   String?  @map("referred_by")
+  totalPoints    Int      @default(0) @map("total_points")
+  totalRewards   Decimal  @default(0) @db.Decimal(18, 6) @map("total_rewards")
+  totalGames     Int      @default(0) @map("total_games")
+  walletBalance  Decimal  @default(0) @db.Decimal(18, 6) @map("wallet_balance")
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  referredBy     User?    @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals      User[]   @relation("UserReferrals")
+  wallet         Wallet?
+  transactions   WalletTransaction[]
+  gameSessions   GameSession[]
+  gameScores     GameScore[]
+  taskCompletions TaskCompletion[]
+  withdrawals    Withdrawal[]
+  notifications  Notification[]
+  @@index([status])
+  @@map("users")
+}
+
+model Wallet {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  availableBalance Decimal  @default(0) @db.Decimal(18, 6) @map("available_balance")
+  pendingBalance   Decimal  @default(0) @db.Decimal(18, 6) @map("pending_balance")
+  lifetimeEarnings Decimal  @default(0) @db.Decimal(18, 6) @map("lifetime_earnings")
+  totalWithdrawn   Decimal  @default(0) @db.Decimal(18, 6) @map("total_withdrawn")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String @id @default(cuid())
+  userId      String @map("user_id")
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  amount      Decimal @db.Decimal(18, 6)
+  balanceAfter Decimal? @db.Decimal(18, 6) @map("balance_after")
+  referenceId String? @map("reference_id")
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+  @@index([status, type])
+  @@map("wallet_transactions")
+}
+
+model Game {
+  id          String @id @default(cuid())
+  slug        String @unique
+  title       String
+  description String
+  status      GameStatus @default(DRAFT)
+  difficulty  String?
+  estimatedSeconds Int? @map("estimated_seconds")
+  rewardMin   Int @default(0) @map("reward_min")
+  rewardMax   Int @default(0) @map("reward_max")
+  config      Json?
+  sortOrder   Int @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  sessions    GameSession[]
+  scores      GameScore[]
+  @@index([status, sortOrder])
+  @@map("games")
+}
+
+model GameSession {
+  id          String @id @default(cuid())
+  userId      String @map("user_id")
+  gameId      String @map("game_id")
+  status      SessionStatus @default(STARTED)
+  pointsEarned Int @default(0) @map("points_earned")
+  rewardEarned Decimal @default(0) @db.Decimal(18, 6) @map("reward_earned")
+  startedAt   DateTime @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  metadata    Json?
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game        Game @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  scores      GameScore[]
+  @@index([userId, startedAt])
+  @@index([gameId, status])
+  @@map("game_sessions")
+}
+
+model GameScore {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  gameId    String @map("game_id")
+  sessionId String? @map("session_id")
+  score     Int
+  rank      Int?
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  session   GameSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  @@index([gameId, score(sort: Desc)])
+  @@index([userId, gameId])
+  @@map("game_scores")
+}
+
+model Task {
+  id          String @id @default(cuid())
+  slug        String @unique
+  title       String
+  description String
+  status      TaskStatus @default(DRAFT)
+  reward      Decimal @default(0) @db.Decimal(18, 6)
+  config      Json?
+  startsAt    DateTime? @map("starts_at")
+  endsAt      DateTime? @map("ends_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  completions TaskCompletion[]
+  @@index([status, startsAt, endsAt])
+  @@map("tasks")
+}
+
+model TaskCompletion {
+  id          String @id @default(cuid())
+  userId      String @map("user_id")
+  taskId      String @map("task_id")
+  status      TaskCompletionStatus @default(STARTED)
+  rewardEarned Decimal @default(0) @db.Decimal(18, 6) @map("reward_earned")
+  proof       Json?
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  @@unique([userId, taskId])
+  @@index([status])
+  @@map("task_completions")
+}
+
+model Withdrawal {
+  id          String @id @default(cuid())
+  userId      String @map("user_id")
+  amount      Decimal @db.Decimal(18, 6)
+  fee         Decimal @default(0) @db.Decimal(18, 6)
+  status      WithdrawalStatus @default(PENDING)
+  method      String
+  destination String
+  externalId  String? @map("external_id")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  processedAt DateTime? @map("processed_at")
+  user        User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("withdrawals")
+}
+
+model Announcement {
+  id        String @id @default(cuid())
+  title     String
+  body      String
+  status    AnnouncementStatus @default(DRAFT)
+  audience  Json?
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@index([status, startsAt, endsAt])
+  @@map("announcements")
+}
+
+model Notification {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  type      NotificationType @default(SYSTEM)
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model Setting {
+  id          String @id @default(cuid())
+  key         String @unique
+  value       Json
+  description String?
+  isPublic    Boolean @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  @@map("settings")
+}
