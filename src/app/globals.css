@@ -45,3 +45,42 @@ button:focus-visible, a:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+
+.memory-card { perspective: 900px; background: transparent; }
+.memory-card__inner { transform-style: preserve-3d; }
+.memory-card__face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.memory-card__front { transform: rotateY(180deg); }
+.memory-card__back {
+  background: #14201e;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.09), 0 8px 20px rgba(20,32,30,.13);
+}
+.memory-card__back::after {
+  content: ""; position: absolute; inset: 7px; border-radius: inherit;
+  border: 1px solid rgba(24,168,143,.38);
+}
+.memory-card--matched { animation: memory-match-pop .5s ease-out; }
+@keyframes memory-match-pop { 45% { transform: scale(1.07); filter: drop-shadow(0 0 12px rgba(24,168,143,.45)); } }
+
+.game-icon-button {
+  display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border-radius: 1rem;
+  border: 1px solid white; background: rgba(255,255,255,.88); color: #14201e;
+  box-shadow: 0 8px 24px rgba(20,32,30,.07); transition: transform .15s, background .15s;
+}
+.game-icon-button:active { transform: scale(.94); }
+.game-primary, .game-secondary {
+  display: flex; min-height: 3rem; align-items: center; justify-content: center; gap: .45rem;
+  border-radius: 1rem; padding: .7rem 1rem; font-size: .8rem; font-weight: 800; transition: transform .15s;
+}
+.game-primary { background: #108b78; color: white; }
+.game-secondary { background: #f3f1ed; color: #14201e; }
+.game-primary:active, .game-secondary:active { transform: scale(.97); }
+.memory-confetti { pointer-events: none; position: absolute; inset: 0; overflow: hidden; border-radius: 2rem; }
+.memory-confetti i {
+  --x: calc((var(--i) * 37) % 100); position: absolute; left: calc(var(--x) * 1%);
+  top: -8px; width: 7px; height: 12px; border-radius: 2px;
+  background: hsl(calc(var(--i) * 41) 75% 58%);
+  animation: memory-confetti-fall 2.2s calc(var(--i) * -.08s) ease-in infinite;
+}
+@keyframes memory-confetti-fall {
+  to { transform: translate(calc((var(--i) % 3 - 1) * 30px), 460px) rotate(540deg); opacity: .2; }
+}

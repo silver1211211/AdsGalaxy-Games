@@ -99,6 +99,8 @@ model User {
   taskCompletions TaskCompletion[]
   withdrawals    Withdrawal[]
   notifications  Notification[]
+  memoryMatchStats MemoryMatchStats?
+  achievements   UserAchievement[]
   @@index([status])
   @@map("users")
 }
@@ -187,6 +189,52 @@ model GameScore {
   @@index([gameId, score(sort: Desc)])
   @@index([userId, gameId])
   @@map("game_scores")
+}
+
+model MemoryMatchStats {
+  id                   String   @id @default(cuid())
+  userId               String   @unique @map("user_id")
+  gamesPlayed          Int      @default(0) @map("games_played")
+  gamesWon             Int      @default(0) @map("games_won")
+  totalMatches         Int      @default(0) @map("total_matches")
+  totalSeconds         Int      @default(0) @map("total_seconds")
+  totalMoves           Int      @default(0) @map("total_moves")
+  highestScore         Int      @default(0) @map("highest_score")
+  fastestWinSeconds    Int?     @map("fastest_win_seconds")
+  bestCombo            Int      @default(0) @map("best_combo")
+  highestUnlockedLevel Int      @default(1) @map("highest_unlocked_level")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("memory_match_stats")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String
+  gameSlug    String?  @map("game_slug")
+  config      Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  users       UserAchievement[]
+  @@index([gameSlug])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  achievementId String      @map("achievement_id")
+  progress      Int         @default(0)
+  unlockedAt    DateTime?   @map("unlocked_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievements")
 }
 
 model Task {
