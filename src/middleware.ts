@@ -87,5 +87,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/games/:path*", "/dev/:path*", "/api/:path*"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot)$).*)",
+  ],
 };
