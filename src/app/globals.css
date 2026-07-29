@@ -30,6 +30,15 @@ button:focus-visible, a:focus-visible {
 }
 ::selection { background: #d1faef; color: #0d7063; }
 
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
+
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }

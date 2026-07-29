@@ -45,7 +45,10 @@ export async function GET(request: Request) {
 }
 export async function POST(request: Request) {
   try {
-    const auth = await requireSession(),
+    const auth = await requireSession();
+    if (auth.source === "DEVELOPMENT")
+      return NextResponse.json({ error: "A Telegram-authenticated session is required" }, { status: 403 });
+    const
       input = schema.parse(await request.json()),
       withdrawal = await createWithdrawal({
         miniAppId: auth.miniAppId,

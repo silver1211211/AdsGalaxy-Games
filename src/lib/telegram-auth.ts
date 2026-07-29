@@ -8,25 +8,53 @@ const telegramUserSchema = z.object({
   username: z.string().max(64).optional(),
   language_code: z.string().max(10).optional(),
   photo_url: z.string().url().optional(),
-  is_premium: z.boolean().optional()
+  is_premium: z.boolean().optional(),
 });
 
 export type ValidatedTelegramUser = z.infer<typeof telegramUserSchema>;
 
-export function validateTelegramInitData(initData: string, botToken: string): ValidatedTelegramUser {
+export type ValidatedTelegramContext = {
+  user: ValidatedTelegramUser;
+  startParam?: string;
+};
+
+export function validateTelegramInitDataContext(
+  initData: string,
+  botToken: string,
+): ValidatedTelegramContext {
   const params = new URLSearchParams(initData);
   const receivedHash = params.get("hash");
   if (!receivedHash) throw new Error("Missing Telegram signature");
   params.delete("hash");
   const authDate = Number(params.get("auth_date"));
-  if (!authDate || Date.now() / 1000 - authDate > 3600) throw new Error("Expired Telegram session");
-  const checkString = [...params.entries()].sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`).join("\n");
+  if (!authDate || Date.now() / 1000 - authDate > 3600)
+    throw new Error("Expired Telegram session");
+  const checkString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
   const secret = createHmac("sha256", "WebAppData").update(botToken).digest();
-  const expected = createHmac("sha256", secret).update(checkString).digest("hex");
-  if (expected.length !== receivedHash.length ||
-      !timingSafeEqual(Buffer.from(expected), Buffer.from(receivedHash))) {
+  const expected = createHmac("sha256", secret)
+    .update(checkString)
+    .digest("hex");
+  if (
+    expected.length !== receivedHash.length ||
+    !timingSafeEqual(Buffer.from(expected), Buffer.from(receivedHash))
+  ) {
     throw new Error("Invalid Telegram signature");
   }
-  return telegramUserSchema.parse(JSON.parse(params.get("user") ?? "{}"));
+  const startParam = params.get("start_param") ?? undefined;
+  if (startParam && !/^[a-z0-9-]{3,64}$/.test(startParam))
+    throw new Error("Invalid Telegram launch context");
+  return {
+    user: telegramUserSchema.parse(JSON.parse(params.get("user") ?? "{}")),
+    startParam,
+  };
+}
+
+export function validateTelegramInitData(
+  initData: string,
+  botToken: string,
+): ValidatedTelegramUser {
+  return validateTelegramInitDataContext(initData, botToken).user;
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { validateTelegramInitData } from "@/lib/telegram-auth";
+import { validateTelegramInitDataContext } from "@/lib/telegram-auth";
+import { decryptSecret } from "@/features/wallet/encryption";
 import {
   createSessionToken,
   SESSION_MAX_AGE_SECONDS,
@@ -12,10 +13,7 @@ import { deviceLabel } from "@/features/profile/profile";
 
 const inputSchema = z.object({
   initData: z.string().min(1),
-  miniAppSlug: z
-    .string()
-    .regex(/^[a-z0-9-]{3,64}$/)
-    .optional(),
+  miniAppSlug: z.string().regex(/^[a-z0-9-]{3,64}$/),
 });
 
 function superAdminIds() {
@@ -30,27 +28,51 @@ function superAdminIds() {
 export async function POST(request: Request) {
   try {
     const input = inputSchema.parse(await request.json());
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    if (!token)
+    const miniApp = await prisma.miniApp.findUnique({
+      where: { slug: input.miniAppSlug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        status: true,
+        botConfiguration: {
+          select: { tokenEncrypted: true, validationStatus: true },
+        },
+      },
+    });
+    if (!miniApp || miniApp.status !== "ACTIVE")
+      return NextResponse.json(
+        { error: "Telegram tenant unavailable" },
+        { status: 404 },
+      );
+    if (
+      !miniApp.botConfiguration ||
+      miniApp.botConfiguration.validationStatus !== "VALIDATED"
+    )
       return NextResponse.json(
         { error: "Authentication unavailable" },
         { status: 503 },
       );
-    const telegram = validateTelegramInitData(input.initData, token);
-    const slug =
-      input.miniAppSlug ?? process.env.DEFAULT_MINI_APP_SLUG ?? "ads-galaxy";
-    const role = superAdminIds().has(String(telegram.id))
-      ? ("SUPER_ADMIN" as const)
-      : ("USER" as const);
+    let token: string;
+    try {
+      token = decryptSecret(miniApp.botConfiguration.tokenEncrypted);
+    } catch {
+      return NextResponse.json(
+        { error: "Authentication unavailable" },
+        { status: 503 },
+      );
+    }
+    const validated = validateTelegramInitDataContext(input.initData, token);
+    token = "";
+    const platformSlug = process.env.PLATFORM_MINI_APP_SLUG ?? "ads-galaxy";
+    const launchSlug = validated.startParam ?? platformSlug;
+    if (launchSlug !== miniApp.slug)
+      return NextResponse.json(
+        { error: "Invalid Telegram launch context" },
+        { status: 401 },
+      );
+    const telegram = validated.user;
     const result = await prisma.$transaction(async (tx) => {
-      const miniApp = await tx.miniApp.upsert({
-        where: { slug },
-        create: {
-          slug,
-          name: process.env.DEFAULT_MINI_APP_NAME ?? "Ads Galaxy",
-        },
-        update: {},
-      });
       const user = await tx.user.upsert({
         where: { telegramId: BigInt(telegram.id) },
         create: {
@@ -78,10 +100,27 @@ export async function POST(request: Request) {
           telegramSyncedAt: new Date(),
         },
       });
+      const existingSuperAdmin = await tx.miniAppMembership.findFirst({
+        where: { userId: user.id, role: "SUPER_ADMIN", status: "ACTIVE" },
+        select: { id: true },
+      });
+      const mayBecomeSuperAdmin =
+        (miniApp.slug === platformSlug &&
+          superAdminIds().has(String(telegram.id))) ||
+        Boolean(existingSuperAdmin);
+      const existingMembership = await tx.miniAppMembership.findUnique({
+        where: { miniAppId_userId: { miniAppId: miniApp.id, userId: user.id } },
+        select: { role: true, status: true },
+      });
+      if (existingMembership?.status === "SUSPENDED")
+        throw new Error("MEMBERSHIP_INACTIVE");
+      const role = mayBecomeSuperAdmin
+        ? ("SUPER_ADMIN" as const)
+        : (existingMembership?.role ?? "USER");
       const membership = await tx.miniAppMembership.upsert({
         where: { miniAppId_userId: { miniAppId: miniApp.id, userId: user.id } },
         create: { miniAppId: miniApp.id, userId: user.id, role },
-        update: role === "SUPER_ADMIN" ? { role } : {},
+        update: mayBecomeSuperAdmin ? { role: "SUPER_ADMIN" } : {},
       });
       await tx.wallet.upsert({
         where: { miniAppId_userId: { miniAppId: miniApp.id, userId: user.id } },
@@ -93,6 +132,47 @@ export async function POST(request: Request) {
         create: { miniAppId: miniApp.id },
         update: {},
       });
+      await Promise.all([
+        tx.tenantAdminSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.quizSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.tapCollectorSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.mazeRunnerSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.walletSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.taskSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
+        tx.adsGalaxyConfiguration.upsert({
+          where: { miniAppId: miniApp.id },
+          create: {
+            miniAppId: miniApp.id,
+            enabled: false,
+            status: "NOT_CONFIGURED",
+          },
+          update: {},
+        }),
+      ]);
       return { user, miniApp, membership };
     });
     const sessionId = crypto.randomUUID();
@@ -133,8 +213,7 @@ export async function POST(request: Request) {
     });
     response.cookies.set(sessionCookie(sessionToken));
     return response;
-  } catch (error) {
-    console.error("Telegram authentication failed", error);
+  } catch {
     return NextResponse.json(
       { error: "Invalid Telegram authentication" },
       { status: 401 },

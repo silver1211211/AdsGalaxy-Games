@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { PlatformPopup } from "@/components/system/platform-popup";
 
 type Method = {
   id: string;
@@ -26,6 +27,8 @@ export function WithdrawalForm() {
   const [destination, setDestination] = useState("");
   const [memo, setMemo] = useState("");
   const [message, setMessage] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [wallet, setWallet] = useState<{ availableBalance: string; withdrawalHoldBalance: string; minimumWithdrawal: string; maximumWithdrawal: string; withdrawalProcessingMode: string } | null>(null);
   useEffect(() => {
     void fetch("/api/wallet/payout-methods", { cache: "no-store" })
       .then(async (response) => {
@@ -35,6 +38,11 @@ export function WithdrawalForm() {
         setMethodId(body.items[0]?.id ?? "");
       })
       .catch((error) => setMessage(error.message));
+    void fetch("/api/wallet", { cache: "no-store" }).then(async (response) => {
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      setWallet(body);
+    }).catch((error) => setMessage(error.message));
   }, []);
   const selected = methods.find((method) => method.id === methodId);
   const estimate = useMemo(() => {
@@ -50,14 +58,13 @@ export function WithdrawalForm() {
       gross === null ? null : Math.max(0, gross - Number(selected.providerFee));
     return { walletAmount, platformFee, gross, received };
   }, [amount, selected]);
-  async function submit() {
-    if (
-      !selected ||
-      !window.confirm(
-        `Confirm ${selected.currency} on ${selected.networkName}. Blockchain transfers cannot be reversed.`,
-      )
-    )
+  async function submit(confirmed = false) {
+    if (!selected) return;
+    if (!confirmed) {
+      setConfirming(true);
       return;
+    }
+    setConfirming(false);
     setMessage("Reserving funds and creating your withdrawal…");
     const response = await fetch("/api/wallet/withdrawals", {
       method: "POST",
@@ -84,7 +91,18 @@ export function WithdrawalForm() {
   }
   return (
     <div className="grid gap-5">
+      {confirming && selected && (
+        <PlatformPopup
+          title="Confirm withdrawal"
+          message={`Confirm ${selected.currency} on ${selected.networkName}. Only use a wallet address that supports the selected currency and network. Using the wrong network may permanently lose funds.`}
+          dismissible
+          onClose={() => setConfirming(false)}
+          primary={{ label: "Submit Withdrawal", onClick: () => void submit(true) }}
+          secondary={{ label: "Cancel", onClick: () => setConfirming(false) }}
+        />
+      )}
       <section className="rounded-3xl bg-white p-5 shadow-card">
+        {wallet && <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl bg-warm-50 p-4 text-xs sm:grid-cols-4"><p><b>Available</b><br />${Number(wallet.availableBalance).toFixed(2)}</p><p><b>Pending hold</b><br />${Number(wallet.withdrawalHoldBalance).toFixed(2)}</p><p><b>Limits</b><br />${Number(wallet.minimumWithdrawal).toFixed(2)}–${Number(wallet.maximumWithdrawal).toFixed(2)}</p><p><b>Processing</b><br />{wallet.withdrawalProcessingMode === "MANUAL" ? "Manual review" : "Automatic provider"}</p></div>}
         <label className="grid gap-1 text-xs font-bold">
           Withdrawal amount (USD)
           <input

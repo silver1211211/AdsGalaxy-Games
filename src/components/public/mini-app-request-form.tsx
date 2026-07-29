@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 type Availability = { available: boolean; status: string; slug: string };
 const categories = ["COMMUNITY","ENTERTAINMENT","EDUCATION","BUSINESS","CREATOR","GAMING","OTHER"];
@@ -9,6 +9,8 @@ export function MiniAppRequestForm({ authenticated, applicantName, username }: {
     primaryPromotionChannel:"TELEGRAM_CHANNEL",primaryPromotionUrl:"https://t.me/",estimatedAudienceSize:0,expectedFirstWeekUsers:1,promotionPlan:"",additionalLinks:"",
     review:false,genuineUsers:false,inactivity:false,rewards:false,terms:false });
   const [availability,setAvailability]=useState<Availability|null>(null),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[submitted,setSubmitted]=useState<any>(null);
+  const [deviceReady,setDeviceReady]=useState(false);
+  useEffect(()=>{if(!authenticated)return;void (async()=>{try{const recovery=localStorage.getItem("ag_request_device"),response=await fetch("/api/request-device",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(recovery?{recoveryIdentifier:recovery}:{})}),body=await response.json();if(!response.ok)throw new Error(body.error??"Device verification failed");localStorage.setItem("ag_request_device",body.identifier);setDeviceReady(true)}catch(error){setMessage(error instanceof Error?error.message:"Device verification failed")}})()},[authenticated]);
   const preview=useMemo(()=>`${typeof location==="undefined"?"https://platform.example":location.origin}/${form.requestedSlug||"your-link"}`,[form.requestedSlug]);
   const set=(key:string,value:any)=>setForm((x)=>({...x,[key]:value}));
   async function checkSlug(value:string){set("requestedSlug",value);if(value.length<5)return setAvailability(null);const r=await fetch(`/api/mini-app-requests/availability?slug=${encodeURIComponent(value)}`),b=await r.json();setAvailability(b)}

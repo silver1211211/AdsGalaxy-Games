@@ -94,8 +94,12 @@ export async function GET() {
         withdrawalsEnabled:
           settings.withdrawalsEnabled && !settings.emergencyDisabled,
         minimumWithdrawal: settings.minimumWithdrawal.toFixed(6),
+        maximumWithdrawal: settings.maximumWithdrawal.toFixed(6),
+        withdrawalProcessingMode: settings.withdrawalProcessingMode,
         pointsPerDollar: settings.pointsPerDollar,
         minimumConversionPoints: settings.minimumConversionPoints,
+        maximumConversionPointsRequest: settings.maximumConversionPointsRequest,
+        maximumConversionPointsDay: settings.maximumConversionPointsDay,
         recentTransactions: walletTx.map((t) => ({
           ...t,
           amount: t.amount.toFixed(6),

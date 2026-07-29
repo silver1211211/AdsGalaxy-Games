@@ -1,8 +1,21 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-type TelegramUser = { id?: number; firstName: string; lastName?: string; username?: string; avatar?: string };
+type TelegramUser = {
+  id?: number;
+  firstName: string;
+  lastName?: string;
+  username?: string;
+  avatar?: string;
+};
 export type DashboardData = {
   user: TelegramUser;
   role: "USER" | "ADMIN" | "SUPER_ADMIN";
@@ -12,7 +25,11 @@ export type DashboardData = {
   highScore: number;
   unlockedLevels: number;
   bestStars: number;
-  ads: { configured: boolean; miniAppId: string | null; environment: string | null };
+  ads: {
+    configured: boolean;
+    miniAppId: string | null;
+    environment: string | null;
+  };
 };
 type TelegramContextValue = {
   user: TelegramUser;
@@ -25,7 +42,13 @@ type TelegramContextValue = {
 const TelegramContext = createContext<TelegramContextValue | null>(null);
 const fallbackUser = { firstName: "Player" };
 
-export function TelegramProvider({ children }: { children: React.ReactNode }) {
+export function TelegramProvider({
+  children,
+  platformMiniAppSlug,
+}: {
+  children: React.ReactNode;
+  platformMiniAppSlug: string;
+}) {
   const [user, setUser] = useState<TelegramUser>(fallbackUser);
   const [isTelegram, setIsTelegram] = useState(false);
   const [ready, setReady] = useState(false);
@@ -35,7 +58,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const refreshDashboard = useCallback(async () => {
     const response = await fetch("/api/me/dashboard", { cache: "no-store" });
     if (!response.ok) return;
-    const data = await response.json() as DashboardData;
+    const data = (await response.json()) as DashboardData;
     setDashboard(data);
     setUser(data.user);
   }, []);
@@ -43,34 +66,74 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const webApp = (window as Window & {
-        Telegram?: { WebApp?: {
-          ready(): void; expand(): void; initData?: string;
-          initDataUnsafe?: { user?: { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string } };
-        } }
-      }).Telegram?.WebApp;
+      const webApp = (
+        window as Window & {
+          Telegram?: {
+            WebApp?: {
+              ready(): void;
+              expand(): void;
+              initData?: string;
+              initDataUnsafe?: {
+                user?: {
+                  id: number;
+                  first_name: string;
+                  last_name?: string;
+                  username?: string;
+                  photo_url?: string;
+                };
+              };
+            };
+          };
+        }
+      ).Telegram?.WebApp;
       webApp?.ready();
       webApp?.expand();
       const raw = webApp?.initDataUnsafe?.user;
       if (active) {
         setIsTelegram(Boolean(webApp && raw));
-        if (raw) setUser({ id: raw.id, firstName: raw.first_name, lastName: raw.last_name, username: raw.username, avatar: raw.photo_url });
+        if (raw)
+          setUser({
+            id: raw.id,
+            firstName: raw.first_name,
+            lastName: raw.last_name,
+            username: raw.username,
+            avatar: raw.photo_url,
+          });
       }
+      const signedStartParam = webApp?.initData
+        ? new URLSearchParams(webApp.initData).get("start_param")
+        : null;
+      const launchSlug = signedStartParam ?? platformMiniAppSlug;
       let response = await fetch("/api/auth/session", { cache: "no-store" });
-      if (!response.ok && webApp?.initData) {
+      let sessionMatchesLaunch = false;
+      if (response.ok) {
+        const current = (await response.clone().json()) as {
+          miniApp?: { slug?: string };
+        };
+        sessionMatchesLaunch = current.miniApp?.slug === launchSlug;
+      }
+      if ((!response.ok || !sessionMatchesLaunch) && webApp?.initData) {
         response = await fetch("/api/auth/telegram", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ initData: webApp.initData })
+          body: JSON.stringify({
+            initData: webApp.initData,
+            miniAppSlug: launchSlug,
+          }),
         });
+        sessionMatchesLaunch = response.ok;
       }
-      if (active && response.ok) {
+      if (active && response.ok && sessionMatchesLaunch) {
         setAuthenticated(true);
         await refreshDashboard();
       } else if (active) {
-        const preview = await fetch("/api/dev/preview/context", { cache: "no-store" });
+        const preview = await fetch("/api/dev/preview/context", {
+          cache: "no-store",
+        });
         if (preview.ok) {
-          const context = await preview.json() as { dashboard: DashboardData };
+          const context = (await preview.json()) as {
+            dashboard: DashboardData;
+          };
           setAuthenticated(true);
           setDashboard(context.dashboard);
           setUser(context.dashboard.user);
@@ -78,16 +141,32 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       }
       if (active) setReady(true);
     })();
-    return () => { active = false; };
-  }, [refreshDashboard]);
+    return () => {
+      active = false;
+    };
+  }, [platformMiniAppSlug, refreshDashboard]);
 
-  const value = useMemo(() => ({ user, isTelegram, ready, authenticated, dashboard, refreshDashboard }),
-    [user, isTelegram, ready, authenticated, dashboard, refreshDashboard]);
-  return <TelegramContext.Provider value={value}>{children}</TelegramContext.Provider>;
+  const value = useMemo(
+    () => ({
+      user,
+      isTelegram,
+      ready,
+      authenticated,
+      dashboard,
+      refreshDashboard,
+    }),
+    [user, isTelegram, ready, authenticated, dashboard, refreshDashboard],
+  );
+  return (
+    <TelegramContext.Provider value={value}>
+      {children}
+    </TelegramContext.Provider>
+  );
 }
 
 export function useTelegram() {
   const value = useContext(TelegramContext);
-  if (!value) throw new Error("useTelegram must be used within TelegramProvider");
+  if (!value)
+    throw new Error("useTelegram must be used within TelegramProvider");
   return value;
 }

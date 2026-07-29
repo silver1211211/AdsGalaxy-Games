@@ -2,6 +2,7 @@ import { Prisma, type MiniAppRequestStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { provisionTenant } from "@/features/super-admin/tenant-provisioning";
 import { normalizeRequestSlug, publicReference, requestSchema, validRequestSlug } from "./policy";
+import { requestBlocksAnother } from "./device";
 
 export async function slugAvailability(raw: string, currentRequestId?: string) {
   const slug = normalizeRequestSlug(raw);
@@ -21,7 +22,7 @@ export async function slugAvailability(raw: string, currentRequestId?: string) {
   return { slug, status: "AVAILABLE" as const, available: true };
 }
 
-export async function submitMiniAppRequest(userId: string, raw: unknown) {
+export async function submitMiniAppRequest(userId: string, deviceIdentifierHash: string, raw: unknown) {
   const input = requestSchema.parse(raw), slug = normalizeRequestSlug(input.requestedSlug);
   if (slug !== input.requestedSlug || !validRequestSlug(slug)) throw new Error("INVALID_SLUG");
   return prisma.$transaction(async (tx) => {
@@ -32,15 +33,20 @@ export async function submitMiniAppRequest(userId: string, raw: unknown) {
     }
     const user = await tx.user.findUnique({ where: { id: userId } });
     if (!user || user.status !== "ACTIVE") throw new Error("APPLICANT_UNAVAILABLE");
-    const active = await tx.miniAppRequest.count({ where: { applicantUserId: userId, status: { in: ["SUBMITTED", "UNDER_REVIEW", "INFORMATION_REQUIRED"] } } });
-    if (active) throw new Error("ACTIVE_REQUEST_EXISTS");
+    const conflicts = await tx.miniAppRequest.findMany({ where: { OR: [{ applicantUserId: userId }, { deviceIdentifierHash }] }, select: { status: true, createdMiniApp: { select: { status: true } } } });
+    if (conflicts.some((item) => requestBlocksAnother(item.status, item.createdMiniApp?.status))) {
+      const override = await tx.miniAppRequestSubmissionOverride.findFirst({ where: { consumedAt: null, expiresAt: { gt: new Date() }, OR: [{ userId }, { deviceIdentifierHash }] }, orderBy: { createdAt: "desc" } });
+      if (!override) throw new Error("ACTIVE_REQUEST_EXISTS");
+      await tx.miniAppRequestSubmissionOverride.update({ where: { id: override.id }, data: { consumedAt: new Date() } });
+      await tx.adminAuditLog.create({ data: { actorUserId: userId, action: "MINI_APP_REQUEST_OVERRIDE_CONSUMED", targetType: "MiniAppRequestSubmissionOverride", targetId: override.id, metadata: { userMatched: override.userId === userId, deviceMatched: override.deviceIdentifierHash === deviceIdentifierHash } } });
+    }
     if (await tx.miniApp.count({ where: { slug } })) throw new Error("SLUG_UNAVAILABLE");
     const request = await tx.miniAppRequest.create({ data: {
       publicReference: publicReference(), applicantUserId: userId, proposedName: input.proposedName, requestedSlug: slug,
       description: input.description, intendedAudience: input.intendedAudience, category: input.category, contactMethod: input.contactMethod,
       primaryPromotionChannel: input.primaryPromotionChannel, primaryPromotionUrl: input.primaryPromotionUrl,
       estimatedAudienceSize: input.estimatedAudienceSize, expectedFirstWeekUsers: input.expectedFirstWeekUsers,
-      promotionPlan: input.promotionPlan, additionalLinks: input.additionalLinks, idempotencyKey: input.idempotencyKey,
+      promotionPlan: input.promotionPlan, additionalLinks: input.additionalLinks, idempotencyKey: input.idempotencyKey, deviceIdentifierHash,
       publicStatusMessage: "Your request has been received and is waiting for review.", expiresAt: new Date(Date.now() + 90 * 86_400_000),
       reservation: { create: { slug } },
       events: { create: { nextStatus: "SUBMITTED", actorUserId: userId, publicMessage: "Request submitted" } },

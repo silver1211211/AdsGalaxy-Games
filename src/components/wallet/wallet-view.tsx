@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   WalletCards,
 } from "lucide-react";
+import { PlatformPopup } from "@/components/system/platform-popup";
 type MoneyTx = {
   id: string;
   type: string;
@@ -48,6 +49,8 @@ type Data = {
   minimumWithdrawal: string;
   pointsPerDollar: number;
   minimumConversionPoints: number;
+  maximumConversionPointsRequest: number;
+  maximumConversionPointsDay: number;
   recentTransactions: MoneyTx[];
   recentPointTransactions: PointTx[];
   recentWithdrawals: Withdrawal[];
@@ -67,7 +70,9 @@ export function WalletView() {
   const [data, setData] = useState<Data | null>(null),
     [error, setError] = useState(""),
     [points, setPoints] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [confirmConversion, setConfirmConversion] = useState(false),
+    [resultPopup, setResultPopup] = useState<{ title: string; message: string } | null>(null);
   const load = useCallback(async () => {
     setError("");
     const r = await fetch("/api/wallet", { cache: "no-store" });
@@ -95,9 +100,13 @@ export function WalletView() {
       }),
       b = await r.json();
     setBusy(false);
-    if (!r.ok) return setError(b.error ?? "Conversion failed");
+    if (!r.ok) {
+      setResultPopup({ title: "Conversion unavailable", message: b.error ?? "Conversion failed" });
+      return;
+    }
     setPoints("");
     await load();
+    setResultPopup({ title: "Conversion successful", message: `${b.points.toLocaleString()} points were converted into $${b.netAmount}.` });
   }
   if (!data)
     return (
@@ -110,6 +119,25 @@ export function WalletView() {
     );
   return (
     <div className="grid gap-5">
+      {confirmConversion && data && (
+        <PlatformPopup
+          title="Confirm point conversion"
+          message={`Convert ${Number(points).toLocaleString()} points at ${data.pointsPerDollar.toLocaleString()} points per $1.00?`}
+          dismissible
+          onClose={() => setConfirmConversion(false)}
+          primary={{ label: "Convert Points", onClick: () => { setConfirmConversion(false); void convert(); } }}
+          secondary={{ label: "Cancel", onClick: () => setConfirmConversion(false) }}
+        />
+      )}
+      {resultPopup && (
+        <PlatformPopup
+          title={resultPopup.title}
+          message={resultPopup.message}
+          dismissible
+          onClose={() => setResultPopup(null)}
+          primary={{ label: "Done", onClick: () => setResultPopup(null) }}
+        />
+      )}
       <section className="overflow-hidden rounded-4xl bg-ink p-6 text-white shadow-float">
         <div className="flex items-center justify-between">
           <div>
@@ -182,7 +210,7 @@ export function WalletView() {
               />
               <button
                 disabled={busy}
-                onClick={() => void convert()}
+                onClick={() => setConfirmConversion(true)}
                 className="game-primary"
               >
                 Convert

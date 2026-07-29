@@ -673,6 +673,7 @@ model MiniAppRequest {
   updatedAt                 DateTime                    @updatedAt @map("updated_at")
   adminCredentialIssuedAt   DateTime?                   @map("admin_credential_issued_at")
   adminCredentialRevealedAt DateTime?                   @map("admin_credential_revealed_at")
+  deviceIdentifierHash      String?                     @map("device_identifier_hash") @db.VarChar(64)
   applicant                 User                        @relation("MiniAppRequestApplicant", fields: [applicantUserId], references: [id], onDelete: Restrict)
   assignedReviewer          User?                       @relation("MiniAppRequestReviewer", fields: [assignedReviewerId], references: [id], onDelete: SetNull)
   createdMiniApp            MiniApp?                    @relation(fields: [createdMiniAppId], references: [id], onDelete: SetNull)
@@ -682,7 +683,23 @@ model MiniAppRequest {
 
   @@index([applicantUserId, status, createdAt])
   @@index([status, submittedAt])
+  @@index([deviceIdentifierHash, status])
   @@map("mini_app_requests")
+}
+
+model MiniAppRequestSubmissionOverride {
+  id                   String    @id @default(cuid())
+  userId               String?   @map("user_id")
+  deviceIdentifierHash String?   @map("device_identifier_hash") @db.VarChar(64)
+  reason               String    @db.VarChar(500)
+  grantedByUserId      String    @map("granted_by_user_id")
+  expiresAt            DateTime  @map("expires_at")
+  consumedAt           DateTime? @map("consumed_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, consumedAt, expiresAt])
+  @@index([deviceIdentifierHash, consumedAt, expiresAt])
+  @@map("mini_app_request_submission_overrides")
 }
 
 model MiniAppRequestMessage {

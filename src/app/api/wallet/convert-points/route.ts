@@ -10,7 +10,10 @@ const schema = z
   .strict();
 export async function POST(request: Request) {
   try {
-    const auth = await requireSession(),
+    const auth = await requireSession();
+    if (auth.source === "DEVELOPMENT")
+      return NextResponse.json({ error: "A Telegram-authenticated session is required" }, { status: 403 });
+    const
       input = schema.parse(await request.json()),
       result = await convertPoints({
         miniAppId: auth.miniAppId,
