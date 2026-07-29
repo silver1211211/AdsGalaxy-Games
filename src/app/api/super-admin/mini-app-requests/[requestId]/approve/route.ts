@@ -1,0 +1,5 @@
+import { requireSuperAdmin } from "@/lib/session";
+import { assertSameOrigin } from "@/features/profile/security";
+import { requireRecentAdminElevation } from "@/features/admin-security/elevation";
+import { approveRequest } from "@/features/mini-app-requests/server";
+export async function POST(request:Request,{params}:{params:Promise<{requestId:string}>}){try{assertSameOrigin(request);const auth=await requireSuperAdmin(),{requestId}=await params;await requireRecentAdminElevation({userId:auth.userId,scopeType:"SUPER_ADMIN"});const result=await approveRequest(requestId,auth.userId);const base=(process.env.NEXT_PUBLIC_APP_URL??new URL(request.url).origin).replace(/\/$/,"");return Response.json({request:result.request,tenant:result.tenant,urls:{miniApp:`${base}/${result.tenant.slug}`,admin:`${base}/${result.tenant.slug}/admin`}})}catch(error){if(error instanceof Response)return error;return Response.json({error:"Approval could not be completed safely.",diagnosticReference:crypto.randomUUID().slice(0,8).toUpperCase(),code:error instanceof Error?error.message:"APPROVAL_FAILED"},{status:422})}}

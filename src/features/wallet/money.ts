@@ -1,0 +1,8 @@
+import { Prisma } from "@prisma/client";
+export const MICRO_UNITS = BigInt(1_000_000);
+export function decimalToMicros(value:Prisma.Decimal|string){const decimal=new Prisma.Decimal(value);if(!decimal.isFinite())throw new Error("Invalid money value");return BigInt(decimal.mul(1_000_000).floor().toFixed(0));}
+export function microsToDecimal(value:bigint){return new Prisma.Decimal(value.toString()).div(1_000_000);}
+export function formatUsd(value:string|Prisma.Decimal){const decimal=new Prisma.Decimal(value);if(!decimal.isFinite())return "$0.00";const fixed=decimal.abs().lt("0.01")&& !decimal.isZero()?decimal.toFixed(6):decimal.toFixed(2);const trimmed=fixed.includes(".")?fixed.replace(/(\.\d{2,}?)0+$/,"$1"):fixed;return `${decimal.isNegative()?"-":""}$${new Prisma.Decimal(trimmed).abs().toFixed(Math.max(2,(trimmed.split(".")[1]??"").length))}`;}
+export function conversionAmounts(points:number,pointsPerDollar:number,feeBps:number){if(!Number.isSafeInteger(points)||points<=0||!Number.isSafeInteger(pointsPerDollar)||pointsPerDollar<=0)throw new Error("Invalid conversion");const gross=BigInt(points)*MICRO_UNITS/BigInt(pointsPerDollar),fee=gross*BigInt(feeBps)/BigInt(10000);return{gross:microsToDecimal(gross),fee:microsToDecimal(fee),net:microsToDecimal(gross-fee)};}
+export function withdrawalFee(amount:Prisma.Decimal,fixed:Prisma.Decimal,bps:number){return fixed.add(amount.mul(bps).div(10000)).toDecimalPlaces(6,Prisma.Decimal.ROUND_UP);}
+export function maskDestination(value:string){const clean=value.trim();if(clean.length<=4)return "••••";return `${clean.slice(0,2)}${"•".repeat(Math.min(8,clean.length-4))}${clean.slice(-2)}`;}

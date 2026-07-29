@@ -46,6 +46,38 @@ button:focus-visible, a:focus-visible {
   }
 }
 
+.sa-root {
+  --sa-bg: #f6f5f2; --sa-surface: #ffffff; --sa-surface-2: #efeee9;
+  --sa-text: #172320; --sa-muted: #696f6c; --sa-border: #e2e2dc;
+  --sa-primary: #108b78; --sa-primary-soft: #dff7f1; --sa-warning: #f76f55;
+  min-height: 100dvh; background: var(--sa-bg); color: var(--sa-text);
+}
+.sa-root[data-sa-theme="dark"] {
+  --sa-bg: #202a2a; --sa-surface: #293535; --sa-surface-2: #344140;
+  --sa-text: #f4f7f6; --sa-muted: #aeb9b6; --sa-border: #40504e;
+  --sa-primary: #28b69d; --sa-primary-soft: #21443e; --sa-warning: #ff846b;
+  color-scheme: dark;
+}
+.sa-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 30; display: none; width: 17rem; flex-direction: column; border-right: 1px solid var(--sa-border); background: var(--sa-surface); padding: 1.5rem; }
+.sa-logo { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border-radius: 1rem; background: var(--sa-primary); color: white; }
+.sa-nav-item { display: flex; min-height: 2.75rem; align-items: center; gap: .75rem; border-radius: .9rem; padding: 0 .85rem; color: var(--sa-muted); font-size: .85rem; font-weight: 800; }
+.sa-nav-item-active { background: var(--sa-primary-soft); color: var(--sa-primary); }
+.sa-muted { color: var(--sa-muted); }
+.sa-account { display: flex; align-items: center; justify-content: space-between; gap: .5rem; border: 1px solid var(--sa-border); border-radius: 1rem; padding: .75rem; }
+.sa-content { min-width: 0; }
+.sa-header { position: sticky; top: 0; z-index: 20; display: flex; min-height: 4rem; align-items: center; gap: .75rem; border-bottom: 1px solid var(--sa-border); background: color-mix(in srgb, var(--sa-surface) 92%, transparent); padding: .65rem 1rem; backdrop-filter: blur(14px); }
+.sa-main { margin: auto; width: 100%; max-width: 92rem; padding: 1.5rem 1rem 4rem; }
+.sa-card { border: 1px solid var(--sa-border); border-radius: 1.25rem; background: var(--sa-surface); box-shadow: 0 12px 35px rgba(12,24,22,.06); }
+.sa-theme-switch { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; border: 1px solid var(--sa-border); border-radius: 1rem; background: var(--sa-surface-2); padding: .25rem; }
+.sa-theme-switch button { display: flex; min-height: 2.25rem; align-items: center; justify-content: center; gap: .35rem; border-radius: .75rem; color: var(--sa-muted); font-size: .72rem; font-weight: 800; }
+.sa-theme-switch button[aria-pressed="true"] { background: var(--sa-surface); color: var(--sa-primary); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.sa-theme-compact { width: 5.75rem; }
+.sa-icon { display: grid; width: 2.6rem; height: 2.6rem; place-items: center; border: 1px solid var(--sa-border); border-radius: .85rem; background: var(--sa-surface); color: var(--sa-text); }
+.sa-drawer-backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(17,28,27,.55); }
+.sa-drawer { position: fixed; inset: 0 auto 0 0; z-index: 50; display: flex; width: min(19rem, 88vw); flex-direction: column; background: var(--sa-surface); padding: 1.25rem; transform: translateX(-105%); transition: transform .2s ease; }
+.sa-drawer-open { transform: translateX(0); }
+@media (min-width: 1024px) { .sa-sidebar { display: flex; } .sa-content { padding-left: 17rem; } .sa-drawer, .sa-drawer-backdrop { display: none; } .sa-main { padding: 2rem 2.25rem 5rem; } }
+
 .memory-card { perspective: 900px; background: transparent; }
 .memory-card__inner { transform-style: preserve-3d; }
 .memory-card__face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -84,3 +116,13 @@ button:focus-visible, a:focus-visible {
 @keyframes memory-confetti-fall {
   to { transform: translate(calc((var(--i) % 3 - 1) * 30px), 460px) rotate(540deg); opacity: .2; }
 }
+@keyframes catch-rush-fall {
+  from { transform: translate(-50%, -5rem) rotate(-3deg); }
+  to { transform: translate(-50%, calc(100dvh + 5rem)) rotate(8deg); }
+}
+.catch-rush-object { animation-name: catch-rush-fall; animation-timing-function: linear; animation-fill-mode: both; will-change: transform; }
+.catch-rush-object.standard { border-color: white; background: white; color: #0f766e; }
+.catch-rush-object.coin_reward { border-color: #fbbf24; background: #fef3c7; color: #b45309; box-shadow: 0 0 18px #fbbf2466; border-radius: 9999px; }
+.catch-rush-object.money_reward { border-color: #34d399; background: #d1fae5; color: #047857; box-shadow: 0 0 22px #34d39977; }
+.catch-rush-object.hazard { border-color: #475569; background: #1e293b; color: white; border-radius: 9999px; }
+@media (prefers-reduced-motion: reduce) { .catch-rush-object { animation-timing-function: linear; } }

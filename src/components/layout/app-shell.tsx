@@ -1,10 +1,2 @@
-import { BottomNav } from "./bottom-nav";
-
-export function AppShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto min-h-dvh w-full max-w-[1180px] px-4 pb-32 pt-5 sm:px-7 sm:pt-8 lg:px-10">
-      {children}
-      <BottomNav />
-    </div>
-  );
-}
+import { BottomNav } from "./bottom-nav";import { getSession } from "@/lib/session";import { prisma } from "@/lib/prisma";import { Wrench } from "lucide-react";
+export async function AppShell({children}:{children:React.ReactNode}){const session=await getSession().catch(()=>null),settings=session?.role==="USER"?await prisma.tenantAdminSettings.findUnique({where:{miniAppId:session.miniAppId},select:{maintenanceMode:true,maintenanceMessage:true}}):null;return <div className="mx-auto min-h-dvh w-full max-w-[1180px] px-4 pb-32 pt-5 sm:px-7 sm:pt-8 lg:px-10">{settings?.maintenanceMode?<main className="grid min-h-[70dvh] place-items-center"><section className="max-w-lg rounded-4xl bg-white p-7 text-center shadow-float"><Wrench className="mx-auto text-teal-600"/><h1 className="mt-4 text-2xl font-black">We’ll be back shortly</h1><p className="mt-3 text-sm leading-6 text-warm-600">{settings.maintenanceMessage||"This Mini App is temporarily unavailable. Please try again later."}</p></section></main>:children}<BottomNav/></div>}

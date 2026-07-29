@@ -1,0 +1,10 @@
+"use client";
+import Link from "next/link";
+import { useEffect,useState } from "react";
+export function RequestStatusList({authenticated}:{authenticated:boolean}){const[data,setData]=useState<any[]|null>(null),[error,setError]=useState("");useEffect(()=>{if(!authenticated)return;fetch("/api/mini-app-requests").then(async r=>{if(!r.ok)throw new Error("Could not load requests");setData((await r.json()).items)}).catch(e=>setError(e.message))},[authenticated]);
+  if(!authenticated)return <Empty title="Sign in required" body="Open an existing Ads Galaxy Mini App and sign in to view requests tied to your trusted Telegram identity."/>;
+  if(error)return <Empty title="Unable to load requests" body={error}/>;
+  if(!data)return <p className="rounded-2xl bg-white p-5 shadow-card">Loading your requests…</p>;
+  if(!data.length)return <Empty title="No requests yet" body="When you submit a Mini App request, its progress will appear here."/>;
+  return <div className="grid gap-4">{data.map(x=><article key={x.publicReference} className="rounded-3xl bg-white p-5 shadow-card"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-black uppercase text-teal-700">{x.publicReference}</p><h2 className="mt-1 text-xl font-black">{x.proposedName}</h2><p className="text-sm text-warm-500">/{x.requestedSlug}</p></div><span className="rounded-full bg-teal-50 px-3 py-2 text-xs font-black text-teal-800">{x.status.replaceAll("_"," ")}</span></div><p className="mt-4 text-sm text-warm-600">{x.publicStatusMessage}</p><div className="mt-4 flex items-center justify-between text-xs text-warm-400"><span>Updated {new Date(x.updatedAt).toLocaleDateString()}</span><Link href={`/request-mini-app/status/${x.publicReference}`} className="font-black text-teal-700">View details →</Link></div></article>)}</div>}
+function Empty({title,body}:{title:string;body:string}){return <section className="rounded-3xl bg-white p-7 text-center shadow-card"><h2 className="text-2xl font-black">{title}</h2><p className="mt-2 text-warm-600">{body}</p><Link href="/request-mini-app" className="game-primary mt-5">Request Mini App</Link></section>}

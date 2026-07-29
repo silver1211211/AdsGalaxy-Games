@@ -1,0 +1,2 @@
+import { AppShell } from "@/components/layout/app-shell";import { ProfilePageShell } from "@/components/profile/profile-page-shell";import { PreferencesForm } from "@/components/profile/preferences-form";
+export default function Page(){return <AppShell><ProfilePageShell title="Preferences and Notifications" description="Choose the updates you want and control game sound."><PreferencesForm/></ProfilePageShell></AppShell>}

@@ -13,6 +13,12 @@ enum UserStatus {
   BANNED
   DELETED
 }
+
+enum AdminCredentialScope {
+  TENANT_ADMIN
+  SUPER_ADMIN
+}
+
 enum TransactionType {
   DEPOSIT
   REWARD
@@ -20,44 +26,162 @@ enum TransactionType {
   ADJUSTMENT
   TASK_REWARD
   GAME_REWARD
+  POINT_CONVERSION
+  WITHDRAWAL_HOLD
+  WITHDRAWAL_COMPLETED
+  WITHDRAWAL_REVERSAL
+  WITHDRAWAL_FEE
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+  REVERSAL
 }
+
 enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
   CANCELLED
 }
+
 enum GameStatus {
   DRAFT
   ACTIVE
   PAUSED
   ARCHIVED
 }
+
 enum SessionStatus {
   STARTED
   COMPLETED
   ABANDONED
   INVALIDATED
 }
+
 enum TaskStatus {
   DRAFT
   ACTIVE
   PAUSED
   ARCHIVED
 }
+
 enum TaskCompletionStatus {
   STARTED
   PENDING_REVIEW
   COMPLETED
   REJECTED
 }
+
+enum TaskType {
+  TELEGRAM_CHANNEL_JOIN
+  TELEGRAM_GROUP_JOIN
+  TELEGRAM_BOT_START
+  TELEGRAM_POST_VIEW
+  MINI_APP_OPEN
+  WEBSITE_VISIT
+  SOCIAL_ACTION
+  ADS_GALAXY_AD
+  GAME_COMPLETION
+  DAILY_CHECK_IN
+  QUIZ_OR_SURVEY
+  CUSTOM_PROOF
+  PARTNER_CALLBACK
+}
+
+enum TaskVerificationMethod {
+  INTERNAL_EVENT
+  TELEGRAM_MEMBERSHIP
+  TELEGRAM_BOT_CALLBACK
+  PARTNER_CALLBACK
+  ADS_GALAXY_VERIFICATION
+  COMPLETION_CODE
+  CONFIRMATION_QUESTION
+  MANUAL_PROOF
+  REINFORCED_SELF_CONFIRMATION
+  NONE
+}
+
+enum TaskVerificationStrength {
+  VERIFIED
+  REINFORCED_SELF_CONFIRMATION
+  MANUAL_REVIEW
+}
+
+enum TaskRewardType {
+  POINTS
+  WALLET
+  POINTS_AND_WALLET
+  NON_FINANCIAL
+}
+
+enum TaskRepeatPolicy {
+  ONCE
+  DAILY
+  WEEKLY
+}
+
+enum TaskAttemptStatus {
+  STARTED
+  DESTINATION_OPENED
+  READY_TO_CONFIRM
+  PENDING_VERIFICATION
+  PENDING_REVIEW
+  VERIFIED
+  SELF_CONFIRMED
+  APPROVED
+  REJECTED
+  REWARDED
+  EXPIRED
+  ABANDONED
+}
+
+enum TaskQuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  EXACT_CODE
+  ACKNOWLEDGEMENT
+}
+
 enum WithdrawalStatus {
   PENDING
+  UNDER_REVIEW
+  APPROVED
   PROCESSING
   COMPLETED
   REJECTED
   CANCELLED
 }
+
+enum WithdrawalProcessingMode {
+  MANUAL
+  OXAPAY_AUTOMATIC
+}
+
+enum PayoutProvider {
+  OXAPAY
+}
+
+enum ProviderPayoutStatus {
+  NOT_SUBMITTED
+  SUBMITTING
+  PENDING
+  PROCESSING
+  CONFIRMING
+  CONFIRMED
+  REJECTED
+  CANCELED
+  UNKNOWN
+}
+
+enum ConversionRoundingRule {
+  DOWN
+}
+
+enum WalletRiskStatus {
+  CLEAR
+  REVIEW
+  BLOCKED
+}
+
 enum NotificationType {
   SYSTEM
   REWARD
@@ -66,126 +190,1646 @@ enum NotificationType {
   WALLET
   ANNOUNCEMENT
 }
+
 enum AnnouncementStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
 }
 
+enum MiniAppStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum MembershipRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AttemptStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+  EXPIRED
+}
+
+enum RewardType {
+  MONEY
+  COIN
+  WALLET
+  GAME_BENEFIT
+  POINT_MULTIPLIER
+}
+
+enum RewardClaimStatus {
+  MATCHED
+  AD_REQUESTED
+  BROWSER_COMPLETED
+  PENDING_VERIFICATION
+  VERIFIED
+  CREDITED
+  CLOSED_EARLY
+  NO_FILL
+  FAILED
+  EXPIRED
+  ALREADY_CLAIMED
+}
+
+enum RepeatPolicy {
+  ONCE_EVER
+  DAILY
+  WEEKLY
+}
+
+enum AdEnvironment {
+  PRODUCTION_VERIFIED
+  SANDBOX
+  DEVELOPMENT_MOCK
+}
+
+enum QuizMode {
+  QUICK
+  CLASSIC
+  CATEGORY
+  DAILY
+}
+
+enum QuizDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuizQuestionSource {
+  GLOBAL_DEFAULT
+  MINI_APP_CUSTOM
+}
+
+enum QuizQuestionStatus {
+  DRAFT
+  PUBLISHED
+  DISABLED
+  ARCHIVED
+}
+
+enum QuizReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum QuizSessionStatus {
+  ACTIVE
+  PAUSED
+  AD_BREAK
+  COMPLETED
+  ABANDONED
+  EXPIRED
+}
+
+enum TapCollectorMode {
+  QUICK
+  CLASSIC
+  SURVIVAL
+  DAILY
+}
+
+enum TapCollectorSessionStatus {
+  READY
+  ACTIVE
+  WAVE_COMPLETE
+  AD_BREAK
+  PAUSED
+  GAME_OVER
+  COMPLETED
+  ABANDONED
+  EXPIRED
+  INVALIDATED
+}
+
+enum TapItemType {
+  COIN
+  MONEY
+  GEM
+  STAR
+  CLOCK
+  SHIELD
+  MAGNET
+  FREEZE
+  BOMB
+  TRAP
+  SPONSORED_CRATE
+}
+
+enum TapItemClass {
+  STANDARD
+  COIN_REWARD
+  MONEY_REWARD
+  HAZARD
+}
+
+enum TapMovementType {
+  STATIC
+  DRIFT_LEFT
+  DRIFT_RIGHT
+  DRIFT_UP
+  DRIFT_DOWN
+  BOUNCE
+  ZIGZAG
+  CIRCLE
+}
+
+enum TapSpawnStatus {
+  SCHEDULED
+  COLLECTED
+  MISSED
+  EXPIRED
+  CANCELLED
+}
+
+enum AppSessionSource {
+  TELEGRAM
+  LOCAL_DEVELOPMENT
+}
+
+enum ProfileTheme {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+enum DataRequestStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum MiniAppRequestStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  INFORMATION_REQUIRED
+  APPROVED
+  REJECTED
+  CANCELED
+  EXPIRED
+}
+
+enum MiniAppRequestSender {
+  APPLICANT
+  SUPER_ADMIN
+  SYSTEM
+}
+
+enum MiniAppRequestMessageVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MiniAppSlugReservationStatus {
+  RESERVED
+  CONVERTED
+  RELEASE_SCHEDULED
+  RELEASED
+}
+
+enum DeletionRequestStatus {
+  PENDING
+  CANCELLED
+  BLOCKED
+  COMPLETED
+}
+
 model User {
-  id             String   @id @default(cuid())
-  telegramId     BigInt   @unique @map("telegram_id")
-  username       String?
-  firstName      String   @map("first_name")
-  lastName       String?  @map("last_name")
-  language       String?  @db.VarChar(10)
-  avatar         String?
-  country        String?  @db.VarChar(2)
-  referralCode   String   @unique @map("referral_code")
-  referredById   String?  @map("referred_by")
-  totalPoints    Int      @default(0) @map("total_points")
-  totalRewards   Decimal  @default(0) @db.Decimal(18, 6) @map("total_rewards")
-  totalGames     Int      @default(0) @map("total_games")
-  walletBalance  Decimal  @default(0) @db.Decimal(18, 6) @map("wallet_balance")
-  status         UserStatus @default(ACTIVE)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  referredBy     User?    @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals      User[]   @relation("UserReferrals")
-  wallet         Wallet?
-  transactions   WalletTransaction[]
-  gameSessions   GameSession[]
-  gameScores     GameScore[]
-  taskCompletions TaskCompletion[]
-  withdrawals    Withdrawal[]
-  notifications  Notification[]
-  memoryMatchStats MemoryMatchStats?
-  achievements   UserAchievement[]
+  id                      String                      @id @default(cuid())
+  telegramId              BigInt                      @unique @map("telegram_id")
+  username                String?
+  firstName               String                      @map("first_name")
+  lastName                String?                     @map("last_name")
+  language                String?                     @db.VarChar(10)
+  avatar                  String?
+  country                 String?                     @db.VarChar(2)
+  telegramPremium         Boolean?                    @map("telegram_premium")
+  telegramSyncedAt        DateTime?                   @map("telegram_synced_at")
+  referralCode            String                      @unique @map("referral_code")
+  referredById            String?                     @map("referred_by")
+  totalPoints             Int                         @default(0) @map("total_points")
+  totalRewards            Decimal                     @default(0) @map("total_rewards") @db.Decimal(18, 6)
+  totalGames              Int                         @default(0) @map("total_games")
+  walletBalance           Decimal                     @default(0) @map("wallet_balance") @db.Decimal(18, 6)
+  status                  UserStatus                  @default(ACTIVE)
+  superAdminTheme         String                      @default("LIGHT") @map("super_admin_theme") @db.VarChar(8)
+  createdAt               DateTime                    @default(now()) @map("created_at")
+  updatedAt               DateTime                    @updatedAt @map("updated_at")
+  referredBy              User?                       @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals               User[]                      @relation("UserReferrals")
+  transactions            WalletTransaction[]
+  gameSessions            GameSession[]
+  gameScores              GameScore[]
+  taskCompletions         TaskCompletion[]
+  withdrawals             Withdrawal[]
+  notifications           Notification[]
+  memoryMatchStats        MemoryMatchStats?
+  achievements            UserAchievement[]
+  memberships             MiniAppMembership[]
+  wallets                 Wallet[]
+  pointTransactions       PointTransaction[]
+  memoryAttempts          MemoryMatchAttempt[]
+  rewardClaims            GameRewardClaim[]
+  adminAuditLogs          AdminAuditLog[]             @relation("AuditActor")
+  quizQuestions           QuizQuestion[]              @relation("QuizQuestionCreator")
+  quizSessions            QuizSession[]
+  tapCollectorSessions    TapCollectorSession[]
+  mazeRunnerAttempts      MazeRunnerAttempt[]
+  mazeRunnerProgress      MazeRunnerProgress[]
+  pointConversions        PointConversion[]
+  walletAdjustments       WalletAdjustment[]          @relation("WalletAdjustmentTarget")
+  taskAttempts            TaskAttempt[]
+  taskSubmissions         TaskSubmission[]
+  profiles                MiniAppUserProfile[]
+  appSessions             AppSession[]
+  dataExportRequests      DataExportRequest[]
+  deletionRequests        AccountDeletionRequest[]
+  adminNotesAuthored      AdminUserNote[]             @relation("AdminNoteAuthor")
+  adminNotesReceived      AdminUserNote[]             @relation("AdminNoteSubject")
+  superAdminNotesAuthored SuperAdminUserNote[]        @relation("SuperAdminNoteAuthor")
+  superAdminNotesReceived SuperAdminUserNote[]        @relation("SuperAdminNoteSubject")
+  miniAppRequests         MiniAppRequest[]            @relation("MiniAppRequestApplicant")
+  reviewedMiniAppRequests MiniAppRequest[]            @relation("MiniAppRequestReviewer")
+  miniAppRequestMessages  MiniAppRequestMessage[]
+  miniAppRequestEvents    MiniAppRequestStatusEvent[]
+  adminCredentials        AdminCredential[]           @relation("AdminCredentialOwner")
+  adminCredentialResets   AdminCredential[]           @relation("AdminCredentialResetBy")
+  adminElevationSessions  AdminElevationSession[]
+
   @@index([status])
   @@map("users")
 }
 
 model Wallet {
-  id               String   @id @default(cuid())
-  userId           String   @unique @map("user_id")
-  availableBalance Decimal  @default(0) @db.Decimal(18, 6) @map("available_balance")
-  pendingBalance   Decimal  @default(0) @db.Decimal(18, 6) @map("pending_balance")
-  lifetimeEarnings Decimal  @default(0) @db.Decimal(18, 6) @map("lifetime_earnings")
-  totalWithdrawn   Decimal  @default(0) @db.Decimal(18, 6) @map("total_withdrawn")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String              @id @default(cuid())
+  miniAppId             String              @map("mini_app_id")
+  userId                String              @map("user_id")
+  availableBalance      Decimal             @default(0) @map("available_balance") @db.Decimal(18, 6)
+  pendingBalance        Decimal             @default(0) @map("pending_balance") @db.Decimal(18, 6)
+  withdrawalHoldBalance Decimal             @default(0) @map("withdrawal_hold_balance") @db.Decimal(18, 6)
+  lifetimeEarnings      Decimal             @default(0) @map("lifetime_earnings") @db.Decimal(18, 6)
+  totalWithdrawn        Decimal             @default(0) @map("total_withdrawn") @db.Decimal(18, 6)
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  miniApp               MiniApp             @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  transactions          WalletTransaction[]
+  withdrawals           Withdrawal[]
+  conversions           PointConversion[]
+
+  @@unique([miniAppId, userId])
+  @@index([userId])
   @@map("wallets")
 }
 
 model WalletTransaction {
-  id          String @id @default(cuid())
-  userId      String @map("user_id")
-  type        TransactionType
-  status      TransactionStatus @default(PENDING)
-  amount      Decimal @db.Decimal(18, 6)
-  balanceAfter Decimal? @db.Decimal(18, 6) @map("balance_after")
-  referenceId String? @map("reference_id")
-  description String?
-  metadata    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(cuid())
+  userId               String            @map("user_id")
+  miniAppId            String            @map("mini_app_id")
+  walletId             String            @map("wallet_id")
+  type                 TransactionType
+  status               TransactionStatus @default(PENDING)
+  amount               Decimal           @db.Decimal(18, 6)
+  currency             String            @default("USD") @db.VarChar(3)
+  balanceBefore        Decimal?          @map("balance_before") @db.Decimal(18, 6)
+  balanceAfter         Decimal?          @map("balance_after") @db.Decimal(18, 6)
+  referenceId          String?           @map("reference_id")
+  description          String?
+  metadata             Json?
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+  completedAt          DateTime?         @map("completed_at")
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  miniApp              MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  wallet               Wallet            @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  rewardClaim          GameRewardClaim?
+  conversion           PointConversion?
+  withdrawalHold       Withdrawal?       @relation("WithdrawalHoldTransaction")
+  withdrawalCompletion Withdrawal?       @relation("WithdrawalCompletionTransaction")
+  withdrawalReversal   Withdrawal?       @relation("WithdrawalReversalTransaction")
+  adjustment           WalletAdjustment?
+
+  @@unique([miniAppId, referenceId])
   @@index([userId, createdAt])
   @@index([status, type])
   @@map("wallet_transactions")
 }
 
 model Game {
-  id          String @id @default(cuid())
-  slug        String @unique
-  title       String
-  description String
-  status      GameStatus @default(DRAFT)
-  difficulty  String?
-  estimatedSeconds Int? @map("estimated_seconds")
-  rewardMin   Int @default(0) @map("reward_min")
-  rewardMax   Int @default(0) @map("reward_max")
-  config      Json?
-  sortOrder   Int @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  sessions    GameSession[]
-  scores      GameScore[]
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  title            String
+  description      String
+  status           GameStatus    @default(DRAFT)
+  difficulty       String?
+  estimatedSeconds Int?          @map("estimated_seconds")
+  rewardMin        Int           @default(0) @map("reward_min")
+  rewardMax        Int           @default(0) @map("reward_max")
+  config           Json?
+  sortOrder        Int           @default(0) @map("sort_order")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  sessions         GameSession[]
+  scores           GameScore[]
+
   @@index([status, sortOrder])
   @@map("games")
 }
 
 model GameSession {
-  id          String @id @default(cuid())
-  userId      String @map("user_id")
-  gameId      String @map("game_id")
-  status      SessionStatus @default(STARTED)
-  pointsEarned Int @default(0) @map("points_earned")
-  rewardEarned Decimal @default(0) @db.Decimal(18, 6) @map("reward_earned")
-  startedAt   DateTime @default(now()) @map("started_at")
-  completedAt DateTime? @map("completed_at")
-  metadata    Json?
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game        Game @relation(fields: [gameId], references: [id], onDelete: Restrict)
-  scores      GameScore[]
+  id           String        @id @default(cuid())
+  userId       String        @map("user_id")
+  gameId       String        @map("game_id")
+  status       SessionStatus @default(STARTED)
+  pointsEarned Int           @default(0) @map("points_earned")
+  rewardEarned Decimal       @default(0) @map("reward_earned") @db.Decimal(18, 6)
+  startedAt    DateTime      @default(now()) @map("started_at")
+  completedAt  DateTime?     @map("completed_at")
+  metadata     Json?
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game         Game          @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  scores       GameScore[]
+
   @@index([userId, startedAt])
   @@index([gameId, status])
   @@map("game_sessions")
 }
 
+model MiniApp {
+  id                      String                       @id @default(cuid())
+  name                    String
+  slug                    String                       @unique
+  status                  MiniAppStatus                @default(ACTIVE)
+  telegramBotReference    String?                      @map("telegram_bot_reference")
+  createdAt               DateTime                     @default(now()) @map("created_at")
+  updatedAt               DateTime                     @updatedAt @map("updated_at")
+  memberships             MiniAppMembership[]
+  wallets                 Wallet[]
+  walletTransactions      WalletTransaction[]
+  pointTransactions       PointTransaction[]
+  gameSettings            MemoryMatchSettings?
+  adConfiguration         AdsGalaxyConfiguration?
+  mazeRunnerSettings      MazeRunnerSettings?
+  mazeRunnerAttempts      MazeRunnerAttempt[]
+  mazeRunnerProgress      MazeRunnerProgress[]
+  attempts                MemoryMatchAttempt[]
+  rewardClaims            GameRewardClaim[]
+  entitlements            RewardEntitlement[]
+  dailyUsage              RewardDailyUsage[]
+  auditLogs               AdminAuditLog[]
+  quizSettings            QuizSettings?
+  quizCategories          MiniAppQuizCategory[]
+  ownedQuizCategories     QuizCategory[]
+  quizQuestions           QuizQuestion[]
+  quizSessions            QuizSession[]
+  quizDailyChallenges     QuizDailyChallenge[]
+  tapCollectorSettings    TapCollectorSettings?
+  tapCollectorSessions    TapCollectorSession[]
+  tapCollectorDailyHunts  TapCollectorDailyHunt[]
+  walletSettings          WalletSettings?
+  payoutMethods           WalletPayoutMethod[]
+  withdrawals             Withdrawal[]
+  pointConversions        PointConversion[]
+  walletAdjustments       WalletAdjustment[]
+  tasks                   Task[]
+  taskSettings            TaskSettings?
+  taskAttempts            TaskAttempt[]
+  taskSubmissions         TaskSubmission[]
+  userProfiles            MiniAppUserProfile[]
+  appSessions             AppSession[]
+  dataExportRequests      DataExportRequest[]
+  deletionRequests        AccountDeletionRequest[]
+  adminUserNotes          AdminUserNote[]
+  adminSettings           TenantAdminSettings?
+  botConfiguration        TenantBotConfiguration?
+  adminNotifications      TenantAdminNotification[]
+  oxaPayCredential        TenantOxaPayCredential?
+  oxaPayPayoutAttempts    OxaPayPayoutAttempt[]
+  gamePlatformOverrides   GameTenantOverride[]
+  sponsoredTargets        SponsoredCampaignTenant[]
+  sponsoredEvents         SponsoredCampaignEvent[]
+  platformAlerts          PlatformAlert[]
+  inactivityEvaluations   TenantInactivityEvaluation[]
+  inactivityExempt        Boolean                      @default(false) @map("inactivity_exempt")
+  inactivityExemptReason  String?                      @map("inactivity_exempt_reason") @db.VarChar(300)
+  inactivityExemptUntil   DateTime?                    @map("inactivity_exempt_until")
+  inactivitySuspendedAt   DateTime?                    @map("inactivity_suspended_at")
+  inactivityResumeAt      DateTime?                    @map("inactivity_resume_at")
+  inactivityReason        String?                      @map("inactivity_reason") @db.VarChar(32)
+  inactivityLastCheckedAt DateTime?                    @map("inactivity_last_checked_at")
+  sourceRequest           MiniAppRequest?
+  adminElevationSessions  AdminElevationSession[]
+
+  @@map("mini_apps")
+}
+
+model MiniAppRequest {
+  id                        String                      @id @default(cuid())
+  publicReference           String                      @unique @map("public_reference") @db.VarChar(20)
+  applicantUserId           String                      @map("applicant_user_id")
+  proposedName              String                      @map("proposed_name") @db.VarChar(100)
+  requestedSlug             String                      @map("requested_slug") @db.VarChar(40)
+  description               String                      @db.VarChar(500)
+  intendedAudience          String                      @map("intended_audience") @db.VarChar(500)
+  category                  String                      @db.VarChar(32)
+  contactMethod             String                      @map("contact_method") @db.VarChar(160)
+  primaryPromotionChannel   String                      @map("primary_promotion_channel") @db.VarChar(32)
+  primaryPromotionUrl       String                      @map("primary_promotion_url") @db.VarChar(500)
+  estimatedAudienceSize     Int                         @map("estimated_audience_size")
+  expectedFirstWeekUsers    Int                         @map("expected_first_week_users")
+  promotionPlan             String                      @map("promotion_plan") @db.VarChar(2000)
+  additionalLinks           Json                        @default("[]") @map("additional_links")
+  status                    MiniAppRequestStatus        @default(SUBMITTED)
+  assignedReviewerId        String?                     @map("assigned_reviewer_id")
+  publicStatusMessage       String?                     @map("public_status_message") @db.VarChar(1000)
+  privateReviewNote         String?                     @map("private_review_note") @db.VarChar(2000)
+  idempotencyKey            String                      @unique @map("idempotency_key") @db.VarChar(100)
+  submittedAt               DateTime                    @default(now()) @map("submitted_at")
+  reviewStartedAt           DateTime?                   @map("review_started_at")
+  approvedAt                DateTime?                   @map("approved_at")
+  rejectedAt                DateTime?                   @map("rejected_at")
+  canceledAt                DateTime?                   @map("canceled_at")
+  expiresAt                 DateTime                    @map("expires_at")
+  createdMiniAppId          String?                     @unique @map("created_mini_app_id")
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  adminCredentialIssuedAt   DateTime?                   @map("admin_credential_issued_at")
+  adminCredentialRevealedAt DateTime?                   @map("admin_credential_revealed_at")
+  applicant                 User                        @relation("MiniAppRequestApplicant", fields: [applicantUserId], references: [id], onDelete: Restrict)
+  assignedReviewer          User?                       @relation("MiniAppRequestReviewer", fields: [assignedReviewerId], references: [id], onDelete: SetNull)
+  createdMiniApp            MiniApp?                    @relation(fields: [createdMiniAppId], references: [id], onDelete: SetNull)
+  messages                  MiniAppRequestMessage[]
+  events                    MiniAppRequestStatusEvent[]
+  reservation               MiniAppSlugReservation?
+
+  @@index([applicantUserId, status, createdAt])
+  @@index([status, submittedAt])
+  @@map("mini_app_requests")
+}
+
+model MiniAppRequestMessage {
+  id           String                          @id @default(cuid())
+  requestId    String                          @map("request_id")
+  senderType   MiniAppRequestSender            @map("sender_type")
+  senderUserId String?                         @map("sender_user_id")
+  message      String                          @db.VarChar(2000)
+  visibility   MiniAppRequestMessageVisibility @default(PUBLIC)
+  createdAt    DateTime                        @default(now()) @map("created_at")
+  request      MiniAppRequest                  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender       User?                           @relation(fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, visibility, createdAt])
+  @@map("mini_app_request_messages")
+}
+
+model MiniAppRequestStatusEvent {
+  id             String                @id @default(cuid())
+  requestId      String                @map("request_id")
+  previousStatus MiniAppRequestStatus? @map("previous_status")
+  nextStatus     MiniAppRequestStatus  @map("next_status")
+  actorUserId    String?               @map("actor_user_id")
+  publicMessage  String?               @map("public_message") @db.VarChar(1000)
+  metadata       Json?
+  createdAt      DateTime              @default(now()) @map("created_at")
+  request        MiniAppRequest        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor          User?                 @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt])
+  @@map("mini_app_request_status_events")
+}
+
+model AdminCredential {
+  id                    String                  @id @default(cuid())
+  userId                String                  @map("user_id")
+  scopeType             AdminCredentialScope    @map("scope_type")
+  passwordHash          String                  @map("password_hash")
+  passwordChangedAt     DateTime?               @map("password_changed_at")
+  temporaryPassword     Boolean                 @default(true) @map("temporary_password")
+  mustChangePassword    Boolean                 @default(true) @map("must_change_password")
+  failedAttemptCount    Int                     @default(0) @map("failed_attempt_count")
+  failedWindowStartedAt DateTime?               @map("failed_window_started_at")
+  lockedUntil           DateTime?               @map("locked_until")
+  lastVerifiedAt        DateTime?               @map("last_verified_at")
+  lastSuccessfulLoginAt DateTime?               @map("last_successful_login_at")
+  lastFailedLoginAt     DateTime?               @map("last_failed_login_at")
+  resetByUserId         String?                 @map("reset_by_user_id")
+  resetAt               DateTime?               @map("reset_at")
+  credentialVersion     Int                     @default(1) @map("credential_version")
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+  user                  User                    @relation("AdminCredentialOwner", fields: [userId], references: [id], onDelete: Cascade)
+  resetBy               User?                   @relation("AdminCredentialResetBy", fields: [resetByUserId], references: [id], onDelete: SetNull)
+  elevationSessions     AdminElevationSession[]
+
+  @@unique([userId, scopeType])
+  @@index([scopeType, lockedUntil])
+  @@map("admin_credentials")
+}
+
+model AdminElevationSession {
+  id                String               @id @default(cuid())
+  tokenHash         String               @unique @map("token_hash") @db.VarChar(64)
+  userId            String               @map("user_id")
+  credentialId      String               @map("credential_id")
+  miniAppId         String?              @map("mini_app_id")
+  scopeType         AdminCredentialScope @map("scope_type")
+  credentialVersion Int                  @map("credential_version")
+  verifiedAt        DateTime             @default(now()) @map("verified_at")
+  expiresAt         DateTime             @map("expires_at")
+  revokedAt         DateTime?            @map("revoked_at")
+  lastUsedAt        DateTime             @default(now()) @map("last_used_at")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential        AdminCredential      @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  miniApp           MiniApp?             @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scopeType, miniAppId, revokedAt, expiresAt])
+  @@index([credentialId, credentialVersion])
+  @@map("admin_elevation_sessions")
+}
+
+model MiniAppSlugReservation {
+  id                 String                       @id @default(cuid())
+  slug               String                       @unique @db.VarChar(40)
+  requestId          String                       @unique @map("request_id")
+  status             MiniAppSlugReservationStatus @default(RESERVED)
+  reservedAt         DateTime                     @default(now()) @map("reserved_at")
+  releaseAt          DateTime?                    @map("release_at")
+  convertedMiniAppId String?                      @map("converted_mini_app_id")
+  request            MiniAppRequest               @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([status, releaseAt])
+  @@map("mini_app_slug_reservations")
+}
+
+model TenantAdminSettings {
+  id                    String   @id @default(cuid())
+  miniAppId             String   @unique @map("mini_app_id")
+  description           String?  @db.VarChar(500)
+  logoUrl               String?  @map("logo_url")
+  timezone              String   @default("UTC") @db.VarChar(64)
+  currency              String   @default("USD") @db.VarChar(3)
+  supportUsername       String?  @map("support_username") @db.VarChar(64)
+  supportUrl            String?  @map("support_url")
+  termsUrl              String?  @map("terms_url")
+  privacyUrl            String?  @map("privacy_url")
+  maintenanceMode       Boolean  @default(false) @map("maintenance_mode")
+  maintenanceMessage    String?  @map("maintenance_message") @db.VarChar(300)
+  securityAlertsEnabled Boolean  @default(true) @map("security_alerts_enabled")
+  startMessage          String?  @map("start_message") @db.VarChar(4000)
+  startImageKey         String?  @map("start_image_key") @db.VarChar(255)
+  startImageData        Bytes?   @map("start_image_data")
+  startImageMime        String?  @map("start_image_mime") @db.VarChar(32)
+  miniAppButtonText     String   @default("Open Mini App") @map("mini_app_button_text") @db.VarChar(40)
+  inlineButtons         Json     @default("[]") @map("inline_buttons")
+  updatedById           String?  @map("updated_by_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  miniApp               MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_admin_settings")
+}
+
+model TenantBotConfiguration {
+  id                 String   @id @default(cuid())
+  miniAppId          String   @unique @map("mini_app_id")
+  tokenEncrypted     String   @map("token_encrypted")
+  tokenMasked        String   @map("token_masked") @db.VarChar(32)
+  botId              String?  @map("bot_id") @db.VarChar(32)
+  botUsername        String?  @map("bot_username") @db.VarChar(64)
+  validationStatus   String   @default("VALIDATED") @map("validation_status") @db.VarChar(32)
+  configuredByUserId String   @map("configured_by_user_id")
+  configuredAt       DateTime @default(now()) @map("configured_at")
+  miniApp            MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_bot_configurations")
+}
+
+model TenantAdminNotification {
+  id        String    @id @default(cuid())
+  miniAppId String    @map("mini_app_id")
+  type      String    @db.VarChar(64)
+  title     String    @db.VarChar(160)
+  body      String    @db.VarChar(500)
+  severity  String    @default("INFO") @db.VarChar(16)
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  miniApp   MiniApp   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@index([miniAppId, readAt, createdAt])
+  @@map("tenant_admin_notifications")
+}
+
+model MiniAppMembership {
+  id           String           @id @default(cuid())
+  miniAppId    String           @map("mini_app_id")
+  userId       String           @map("user_id")
+  role         MembershipRole   @default(USER)
+  status       MembershipStatus @default(ACTIVE)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  lastActiveAt DateTime         @default(now()) @map("last_active_at")
+  bannedById   String?          @map("banned_by_id")
+  bannedAt     DateTime?        @map("banned_at")
+  banReason    String?          @map("ban_reason") @db.VarChar(300)
+  unbannedById String?          @map("unbanned_by_id")
+  unbannedAt   DateTime?        @map("unbanned_at")
+  miniApp      MiniApp          @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId])
+  @@index([miniAppId, status])
+  @@index([userId, status])
+  @@map("mini_app_memberships")
+}
+
+model MiniAppUserProfile {
+  id                        String       @id @default(cuid())
+  miniAppId                 String       @map("mini_app_id")
+  userId                    String       @map("user_id")
+  displayNameOverride       String?      @map("display_name_override") @db.VarChar(40)
+  bio                       String?      @db.VarChar(160)
+  customAvatarKey           String?      @map("custom_avatar_key")
+  locale                    String       @default("en-US") @db.VarChar(16)
+  timezone                  String       @default("UTC") @db.VarChar(64)
+  themePreference           ProfileTheme @default(SYSTEM) @map("theme_preference")
+  soundEnabled              Boolean      @default(true) @map("sound_enabled")
+  hapticsEnabled            Boolean      @default(true) @map("haptics_enabled")
+  reducedMotionEnabled      Boolean      @default(false) @map("reduced_motion_enabled")
+  gameConfirmationsEnabled  Boolean      @default(true) @map("game_confirmations_enabled")
+  autoPauseEnabled          Boolean      @default(true) @map("auto_pause_enabled")
+  largerTapTargetsEnabled   Boolean      @default(false) @map("larger_tap_targets_enabled")
+  highContrastEnabled       Boolean      @default(false) @map("high_contrast_enabled")
+  simplifiedAnimations      Boolean      @default(false) @map("simplified_animations")
+  walletNotifications       Boolean      @default(true) @map("wallet_notifications")
+  withdrawalNotifications   Boolean      @default(true) @map("withdrawal_notifications")
+  taskNotifications         Boolean      @default(true) @map("task_notifications")
+  gameNotifications         Boolean      @default(true) @map("game_notifications")
+  rewardNotifications       Boolean      @default(true) @map("reward_notifications")
+  announcementNotifications Boolean      @default(true) @map("announcement_notifications")
+  securityNotifications     Boolean      @default(true) @map("security_notifications")
+  marketingNotifications    Boolean      @default(false) @map("marketing_notifications")
+  telegramNotifications     Boolean      @default(false) @map("telegram_notifications")
+  createdAt                 DateTime     @default(now()) @map("created_at")
+  updatedAt                 DateTime     @updatedAt @map("updated_at")
+  miniApp                   MiniApp      @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId])
+  @@index([userId])
+  @@map("mini_app_user_profiles")
+}
+
+model AppSession {
+  id               String           @id @default(cuid())
+  miniAppId        String           @map("mini_app_id")
+  userId           String           @map("user_id")
+  membershipId     String           @map("membership_id")
+  tokenHash        String           @unique @map("token_hash")
+  source           AppSessionSource
+  createdAt        DateTime         @default(now()) @map("created_at")
+  lastSeenAt       DateTime         @default(now()) @map("last_seen_at")
+  expiresAt        DateTime         @map("expires_at")
+  revokedAt        DateTime?        @map("revoked_at")
+  userAgentSummary String?          @map("user_agent_summary") @db.VarChar(120)
+  deviceLabel      String?          @map("device_label") @db.VarChar(80)
+  miniApp          MiniApp          @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([miniAppId, userId, revokedAt, expiresAt])
+  @@index([membershipId])
+  @@map("app_sessions")
+}
+
+model DataExportRequest {
+  id         String            @id @default(cuid())
+  miniAppId  String            @map("mini_app_id")
+  userId     String            @map("user_id")
+  status     DataRequestStatus @default(PENDING)
+  storageKey String?           @map("storage_key")
+  expiresAt  DateTime?         @map("expires_at")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  miniApp    MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([miniAppId, userId, status])
+  @@map("data_export_requests")
+}
+
+model AccountDeletionRequest {
+  id           String                @id @default(cuid())
+  miniAppId    String                @map("mini_app_id")
+  userId       String                @map("user_id")
+  status       DeletionRequestStatus @default(PENDING)
+  reason       String?               @db.VarChar(300)
+  executeAfter DateTime              @map("execute_after")
+  cancelledAt  DateTime?             @map("cancelled_at")
+  completedAt  DateTime?             @map("completed_at")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+  miniApp      MiniApp               @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([miniAppId, userId, status])
+  @@map("account_deletion_requests")
+}
+
+model AdminUserNote {
+  id           String   @id @default(cuid())
+  miniAppId    String   @map("mini_app_id")
+  userId       String   @map("user_id")
+  authorUserId String   @map("author_user_id")
+  body         String   @db.VarChar(1000)
+  createdAt    DateTime @default(now()) @map("created_at")
+  miniApp      MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user         User     @relation("AdminNoteSubject", fields: [userId], references: [id], onDelete: Cascade)
+  author       User     @relation("AdminNoteAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([miniAppId, userId, createdAt])
+  @@map("admin_user_notes")
+}
+
+model SuperAdminUserNote {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  authorUserId String   @map("author_user_id")
+  body         String   @db.VarChar(1000)
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation("SuperAdminNoteSubject", fields: [userId], references: [id], onDelete: Cascade)
+  author       User     @relation("SuperAdminNoteAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([authorUserId, createdAt])
+  @@map("super_admin_user_notes")
+}
+
+model MemoryMatchSettings {
+  id                    String       @id @default(cuid())
+  miniAppId             String       @unique @map("mini_app_id")
+  enabled               Boolean      @default(true)
+  specialCardsEnabled   Boolean      @default(true) @map("special_cards_enabled")
+  moneyMatchEnabled     Boolean      @default(true) @map("money_match_enabled")
+  coinMatchEnabled      Boolean      @default(true) @map("coin_match_enabled")
+  rewardedAdsEnabled    Boolean      @default(true) @map("rewarded_ads_enabled")
+  emergencyDisabled     Boolean      @default(false) @map("emergency_disabled")
+  moneyRewardAmount     Decimal      @default(0.05) @map("money_reward_amount") @db.Decimal(18, 6)
+  moneyRewardMin        Decimal      @default(0.01) @map("money_reward_min") @db.Decimal(18, 6)
+  moneyRewardMax        Decimal      @default(1) @map("money_reward_max") @db.Decimal(18, 6)
+  coinMultiplierMin     Int          @default(1200) @map("coin_multiplier_min")
+  coinMultiplierMax     Int          @default(1500) @map("coin_multiplier_max")
+  coinProbabilityEarly  Int          @default(35) @map("coin_probability_early")
+  optionAWeight         Int          @default(50) @map("option_a_weight")
+  optionBWeight         Int          @default(20) @map("option_b_weight")
+  optionCWeight         Int          @default(30) @map("option_c_weight")
+  moneyRepeatPolicy     RepeatPolicy @default(ONCE_EVER) @map("money_repeat_policy")
+  coinRepeatPolicy      RepeatPolicy @default(DAILY) @map("coin_repeat_policy")
+  maxMoneyClaimsUserDay Int          @default(5) @map("max_money_claims_user_day")
+  maxCoinClaimsUserDay  Int          @default(5) @map("max_coin_claims_user_day")
+  maxWalletUserDay      Decimal      @default(0.25) @map("max_wallet_user_day") @db.Decimal(18, 6)
+  maxWalletMiniAppDay   Decimal      @default(100) @map("max_wallet_mini_app_day") @db.Decimal(18, 6)
+  retryCooldownSeconds  Int          @default(60) @map("retry_cooldown_seconds")
+  maxAdRetries          Int          @default(3) @map("max_ad_retries")
+  pendingExpiryMinutes  Int          @default(1440) @map("pending_expiry_minutes")
+  updatedById           String?      @map("updated_by_id")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+  miniApp               MiniApp      @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("memory_match_settings")
+}
+
+model AdsGalaxyConfiguration {
+  id                      String                   @id @default(cuid())
+  miniAppId               String                   @unique @map("mini_app_id")
+  enabled                 Boolean                  @default(false)
+  miniAppPublicId         String?                  @map("mini_app_public_id")
+  environment             AdEnvironment            @default(PRODUCTION_VERIFIED)
+  status                  String                   @default("NOT_CONFIGURED")
+  lastSuccessfulAdAt      DateTime?                @map("last_successful_ad_at")
+  lastErrorCode           String?                  @map("last_error_code")
+  lastErrorMessage        String?                  @map("last_error_message")
+  webhookSecretEncrypted  String?                  @map("webhook_secret_encrypted")
+  webhookSecretPreview    String?                  @map("webhook_secret_preview") @db.VarChar(24)
+  webhookSecretVersion    Int                      @default(1) @map("webhook_secret_version")
+  webhookSecretVerifiedAt DateTime?                @map("webhook_secret_verified_at")
+  privateApiKeyEncrypted  String?                  @map("private_api_key_encrypted")
+  privateApiKeyPreview    String?                  @map("private_api_key_preview") @db.VarChar(24)
+  applicationId           Int?                     @map("application_id")
+  configuredById          String?                  @map("configured_by_id")
+  updatedById             String?                  @map("updated_by_id")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  miniApp                 MiniApp                  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  adRequests              AdsGalaxyAdRequest[]
+  callbackEvents          AdsGalaxyCallbackEvent[]
+
+  @@map("ads_galaxy_configurations")
+}
+
+model MemoryMatchAttempt {
+  id                    String            @id @default(cuid())
+  miniAppId             String            @map("mini_app_id")
+  userId                String            @map("user_id")
+  level                 Int
+  status                AttemptStatus     @default(ACTIVE)
+  seed                  String
+  configVersion         Int               @default(1) @map("config_version")
+  rewardAssignment      Json              @map("reward_assignment")
+  board                 Json
+  matchedPairSlots      Json              @map("matched_pair_slots")
+  firstSelectedIndex    Int?              @map("first_selected_index")
+  moves                 Int               @default(0)
+  mismatches            Int               @default(0)
+  currentCombo          Int               @default(0) @map("current_combo")
+  highestCombo          Int               @default(0) @map("highest_combo")
+  shuffleCount          Int               @default(0) @map("shuffle_count")
+  startedAt             DateTime          @default(now()) @map("started_at")
+  lastActivityAt        DateTime          @default(now()) @map("last_activity_at")
+  pausedAt              DateTime?         @map("paused_at")
+  pausedDurationSeconds Int               @default(0) @map("paused_duration_seconds")
+  completedAt           DateTime?         @map("completed_at")
+  expiresAt             DateTime          @map("expires_at")
+  basePoints            Int               @default(0) @map("base_points")
+  finalPoints           Int               @default(0) @map("final_points")
+  stars                 Int?
+  walletRewardTotal     Decimal           @default(0) @map("wallet_reward_total") @db.Decimal(18, 6)
+  version               Int               @default(1)
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  miniApp               MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims                GameRewardClaim[]
+  pointTransaction      PointTransaction?
+
+  @@index([miniAppId, userId, level, status])
+  @@index([expiresAt, status])
+  @@map("memory_match_attempts")
+}
+
+model GameRewardClaim {
+  id                      String                  @id @default(cuid())
+  miniAppId               String                  @map("mini_app_id")
+  userId                  String                  @map("user_id")
+  attemptId               String?                 @map("attempt_id")
+  gameKey                 String                  @default("memory-match") @map("game_key")
+  quizSessionId           String?                 @map("quiz_session_id")
+  tapCollectorSessionId   String?                 @map("tap_collector_session_id")
+  tapSpawnEventId         String?                 @map("tap_spawn_event_id")
+  wave                    Int?
+  questionPosition        Int?                    @map("question_position")
+  claimContext            String?                 @map("claim_context")
+  level                   Int
+  pairSlot                Int                     @map("pair_slot")
+  rewardType              RewardType              @map("reward_type")
+  status                  RewardClaimStatus       @default(MATCHED)
+  configuredMoneyAmount   Decimal?                @map("configured_money_amount") @db.Decimal(18, 6)
+  configuredMultiplierMin Int?                    @map("configured_multiplier_min")
+  configuredMultiplierMax Int?                    @map("configured_multiplier_max")
+  issuedMultiplier        Int?                    @map("issued_multiplier")
+  internalAdRequestId     String?                 @unique @map("internal_ad_request_id")
+  providerEventId         String?                 @unique @map("provider_event_id")
+  matchedAt               DateTime                @default(now()) @map("matched_at")
+  adRequestedAt           DateTime?               @map("ad_requested_at")
+  browserCompletedAt      DateTime?               @map("browser_completed_at")
+  providerVerifiedAt      DateTime?               @map("provider_verified_at")
+  creditedAt              DateTime?               @map("credited_at")
+  retryCount              Int                     @default(0) @map("retry_count")
+  nextRetryAt             DateTime?               @map("next_retry_at")
+  expiresAt               DateTime                @map("expires_at")
+  errorCode               String?                 @map("error_code")
+  errorMessage            String?                 @map("error_message")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+  miniApp                 MiniApp                 @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt                 MemoryMatchAttempt?     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  quizSession             QuizSession?            @relation(fields: [quizSessionId], references: [id], onDelete: Cascade)
+  tapCollectorSession     TapCollectorSession?    @relation(fields: [tapCollectorSessionId], references: [id], onDelete: Cascade)
+  tapSpawnEvent           TapCollectorSpawnEvent? @relation(fields: [tapSpawnEventId], references: [id], onDelete: SetNull)
+  walletTransaction       WalletTransaction?      @relation(fields: [walletTransactionId], references: [id])
+  walletTransactionId     String?                 @unique @map("wallet_transaction_id")
+  adsGalaxyAdRequests     AdsGalaxyAdRequest[]
+  mazeRunnerAttemptId     String?                 @map("maze_runner_attempt_id")
+  mazeRunnerAttempt       MazeRunnerAttempt?      @relation(fields: [mazeRunnerAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, pairSlot, rewardType])
+  @@unique([quizSessionId, questionPosition, claimContext])
+  @@unique([tapCollectorSessionId, wave, claimContext])
+  @@unique([tapSpawnEventId, claimContext])
+  @@index([miniAppId, userId, status])
+  @@index([expiresAt, status])
+  @@index([mazeRunnerAttemptId, claimContext])
+  @@map("game_reward_claims")
+}
+
+model MazeRunnerSettings {
+  id                   String   @id @default(cuid())
+  miniAppId            String   @unique @map("mini_app_id")
+  enabled              Boolean  @default(true)
+  emergencyDisabled    Boolean  @default(false) @map("emergency_disabled")
+  baseCompletionPoints Int      @default(100) @map("base_completion_points")
+  collectiblePoints    Int      @default(10) @map("collectible_points")
+  bonusChestPoints     Int      @default(50) @map("bonus_chest_points")
+  attemptExpiryMinutes Int      @default(120) @map("attempt_expiry_minutes")
+  adCooldownSeconds    Int      @default(300) @map("ad_cooldown_seconds")
+  maxAdsPerAttempt     Int      @default(2) @map("max_ads_per_attempt")
+  continueEnabled      Boolean  @default(true) @map("continue_enabled")
+  hintEnabled          Boolean  @default(true) @map("hint_enabled")
+  doublePointsEnabled  Boolean  @default(true) @map("double_points_enabled")
+  bonusChestEnabled    Boolean  @default(true) @map("bonus_chest_enabled")
+  updatedById          String?  @map("updated_by_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  miniApp              MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("maze_runner_settings")
+}
+
+model MazeRunnerAttempt {
+  id                    String            @id @default(cuid())
+  publicReference       String            @unique @map("public_reference") @db.VarChar(80)
+  miniAppId             String            @map("mini_app_id")
+  userId                String            @map("user_id")
+  level                 Int
+  seed                  String            @db.VarChar(80)
+  mazeVersion           Int               @default(1) @map("maze_version")
+  status                String            @default("ACTIVE") @db.VarChar(24)
+  playerX               Int               @map("player_x")
+  playerY               Int               @map("player_y")
+  keysCollected         Json              @default("[]") @map("keys_collected")
+  gatesOpened           Json              @default("[]") @map("gates_opened")
+  collectiblesCollected Json              @default("[]") @map("collectibles_collected")
+  checkpointState       Json?             @map("checkpoint_state")
+  boostsUsed            Json              @default("[]") @map("boosts_used")
+  livesRemaining        Int               @default(1) @map("lives_remaining")
+  hazardFreezeMoves     Int               @default(0) @map("hazard_freeze_moves")
+  chaserX               Int?              @map("chaser_x")
+  chaserY               Int?              @map("chaser_y")
+  bonusChestPoints      Int               @default(0) @map("bonus_chest_points")
+  moveCount             Int               @default(0) @map("move_count")
+  version               Int               @default(1)
+  startedAt             DateTime          @default(now()) @map("started_at")
+  pausedAt              DateTime?         @map("paused_at")
+  pausedDurationMs      Int               @default(0) @map("paused_duration_ms")
+  completedAt           DateTime?         @map("completed_at")
+  failedAt              DateTime?         @map("failed_at")
+  failureReason         String?           @map("failure_reason") @db.VarChar(48)
+  activeElapsedMs       Int?              @map("active_elapsed_ms")
+  basePoints            Int               @default(0) @map("base_points")
+  finalPoints           Int               @default(0) @map("final_points")
+  rating                Int?
+  lastAdRequestedAt     DateTime?         @map("last_ad_requested_at")
+  adCount               Int               @default(0) @map("ad_count")
+  expiresAt             DateTime          @map("expires_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  miniApp               MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moves                 MazeRunnerMove[]
+  claims                GameRewardClaim[]
+
+  @@index([miniAppId, userId, level, status])
+  @@index([expiresAt, status])
+  @@map("maze_runner_attempts")
+}
+
+model MazeRunnerMove {
+  id               String            @id @default(cuid())
+  attemptId        String            @map("attempt_id")
+  moveIndex        Int               @map("move_index")
+  idempotencyKey   String            @map("idempotency_key") @db.VarChar(80)
+  fromX            Int               @map("from_x")
+  fromY            Int               @map("from_y")
+  toX              Int               @map("to_x")
+  toY              Int               @map("to_y")
+  direction        String            @db.VarChar(8)
+  result           String            @db.VarChar(32)
+  eventType        String?           @map("event_type") @db.VarChar(32)
+  serverReceivedAt DateTime          @default(now()) @map("server_received_at")
+  attempt          MazeRunnerAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, moveIndex])
+  @@unique([attemptId, idempotencyKey])
+  @@map("maze_runner_moves")
+}
+
+model MazeRunnerProgress {
+  id               String    @id @default(cuid())
+  miniAppId        String    @map("mini_app_id")
+  userId           String    @map("user_id")
+  level            Int
+  completionCount  Int       @default(0) @map("completion_count")
+  bestTimeMs       Int?      @map("best_time_ms")
+  bestRating       Int       @default(0) @map("best_rating")
+  bestPoints       Int       @default(0) @map("best_points")
+  firstCompletedAt DateTime? @map("first_completed_at")
+  lastCompletedAt  DateTime? @map("last_completed_at")
+  miniApp          MiniApp   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId, level])
+  @@index([miniAppId, userId])
+  @@map("maze_runner_progress")
+}
+
+model AdsGalaxyAdRequest {
+  id                 String                   @id @default(cuid())
+  publicReference    String                   @unique @map("public_reference") @db.VarChar(96)
+  miniAppId          String                   @map("mini_app_id")
+  userId             String                   @map("user_id")
+  claimId            String                   @map("claim_id")
+  purpose            String                   @db.VarChar(64)
+  providerMiniAppId  Int                      @map("provider_mini_app_id")
+  providerRequestId  String?                  @unique @map("provider_request_id") @db.VarChar(64)
+  providerEventId    String?                  @unique @map("provider_event_id") @db.VarChar(64)
+  browserStatus      String                   @default("REQUESTED") @map("browser_status") @db.VarChar(32)
+  providerStatus     String                   @default("PENDING") @map("provider_status") @db.VarChar(32)
+  verificationStatus String                   @default("PENDING") @map("verification_status") @db.VarChar(32)
+  requestedAt        DateTime                 @default(now()) @map("requested_at")
+  browserCompletedAt DateTime?                @map("browser_completed_at")
+  callbackReceivedAt DateTime?                @map("callback_received_at")
+  verifiedAt         DateTime?                @map("verified_at")
+  settledAt          DateTime?                @map("settled_at")
+  expiresAt          DateTime                 @map("expires_at")
+  failureCode        String?                  @map("failure_code") @db.VarChar(64)
+  failureMessage     String?                  @map("failure_message") @db.VarChar(300)
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
+  configuration      AdsGalaxyConfiguration   @relation(fields: [miniAppId], references: [miniAppId], onDelete: Cascade)
+  claim              GameRewardClaim          @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  callbackEvents     AdsGalaxyCallbackEvent[]
+
+  @@unique([claimId, purpose])
+  @@index([miniAppId, userId, verificationStatus])
+  @@index([providerStatus, createdAt])
+  @@index([expiresAt, verificationStatus])
+  @@map("ads_galaxy_ad_requests")
+}
+
+model AdsGalaxyCallbackEvent {
+  id                String                  @id @default(cuid())
+  providerEventId   String                  @map("provider_event_id") @db.VarChar(64)
+  eventType         String                  @map("event_type") @db.VarChar(48)
+  payloadDigest     String                  @map("payload_digest") @db.VarChar(71)
+  miniAppId         String?                 @map("mini_app_id")
+  adRequestId       String?                 @map("ad_request_id")
+  providerRequestId String                  @map("provider_request_id") @db.VarChar(64)
+  providerMiniAppId Int                     @map("provider_mini_app_id")
+  providerStatus    String                  @map("provider_status") @db.VarChar(32)
+  verificationLevel String                  @map("verification_level") @db.VarChar(48)
+  rewardEligible    Boolean                 @map("reward_eligible")
+  signatureVersion  String                  @map("signature_version") @db.VarChar(16)
+  deliveryTimestamp DateTime                @map("delivery_timestamp")
+  processingStatus  String                  @map("processing_status") @db.VarChar(32)
+  duplicateCount    Int                     @default(0) @map("duplicate_count")
+  failureCode       String?                 @map("failure_code") @db.VarChar(64)
+  receivedAt        DateTime                @default(now()) @map("received_at")
+  processedAt       DateTime?               @map("processed_at")
+  configuration     AdsGalaxyConfiguration? @relation(fields: [miniAppId], references: [miniAppId], onDelete: SetNull)
+  adRequest         AdsGalaxyAdRequest?     @relation(fields: [adRequestId], references: [id], onDelete: SetNull)
+
+  @@unique([providerEventId, eventType])
+  @@index([providerRequestId])
+  @@index([processingStatus, receivedAt])
+  @@map("ads_galaxy_callback_events")
+}
+
+model RewardEntitlement {
+  id         String     @id @default(cuid())
+  miniAppId  String     @map("mini_app_id")
+  userId     String     @map("user_id")
+  gameKey    String     @map("game_key")
+  level      Int
+  rewardType RewardType @map("reward_type")
+  periodKey  String     @map("period_key")
+  claimId    String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+  miniApp    MiniApp    @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId, gameKey, level, rewardType, periodKey])
+  @@index([claimId])
+  @@map("reward_entitlements")
+}
+
+model PointTransaction {
+  id                    String               @id @default(cuid())
+  miniAppId             String               @map("mini_app_id")
+  userId                String               @map("user_id")
+  attemptId             String?              @unique @map("attempt_id")
+  quizSessionId         String?              @unique @map("quiz_session_id")
+  tapCollectorSessionId String?              @unique @map("tap_collector_session_id")
+  amount                Int
+  balanceAfter          Int                  @map("balance_after")
+  type                  String
+  referenceId           String               @map("reference_id")
+  description           String?
+  metadata              Json?
+  createdAt             DateTime             @default(now()) @map("created_at")
+  miniApp               MiniApp              @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt               MemoryMatchAttempt?  @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  quizSession           QuizSession?         @relation(fields: [quizSessionId], references: [id], onDelete: SetNull)
+  tapCollectorSession   TapCollectorSession? @relation(fields: [tapCollectorSessionId], references: [id], onDelete: SetNull)
+  conversion            PointConversion?
+  adjustment            WalletAdjustment?
+
+  @@unique([miniAppId, referenceId])
+  @@index([miniAppId, userId, createdAt])
+  @@map("point_transactions")
+}
+
+model QuizCategory {
+  id             String                @id @default(cuid())
+  ownerMiniAppId String?               @map("owner_mini_app_id")
+  name           String
+  slug           String
+  description    String
+  icon           String
+  enabled        Boolean               @default(true)
+  sortOrder      Int                   @default(0) @map("sort_order")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  ownerMiniApp   MiniApp?              @relation(fields: [ownerMiniAppId], references: [id], onDelete: Cascade)
+  questions      QuizQuestion[]
+  miniApps       MiniAppQuizCategory[]
+  sessions       QuizSession[]
+
+  @@unique([ownerMiniAppId, slug])
+  @@index([enabled, sortOrder])
+  @@map("quiz_categories")
+}
+
+model MiniAppQuizCategory {
+  id         String       @id @default(cuid())
+  miniAppId  String       @map("mini_app_id")
+  categoryId String       @map("category_id")
+  enabled    Boolean      @default(true)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  miniApp    MiniApp      @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  category   QuizCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, categoryId])
+  @@map("mini_app_quiz_categories")
+}
+
+model QuizQuestion {
+  id                String                @id @default(cuid())
+  ownerMiniAppId    String?               @map("owner_mini_app_id")
+  createdByUserId   String?               @map("created_by_user_id")
+  sourceType        QuizQuestionSource    @map("source_type")
+  categoryId        String                @map("category_id")
+  difficulty        QuizDifficulty
+  questionText      String                @map("question_text")
+  explanation       String
+  language          String                @default("en") @db.VarChar(10)
+  status            QuizQuestionStatus    @default(DRAFT)
+  isActive          Boolean               @default(true) @map("is_active")
+  reviewStatus      QuizReviewStatus      @default(PENDING) @map("review_status")
+  seedKey           String?               @unique @map("seed_key")
+  timesUsed         Int                   @default(0) @map("times_used")
+  timesAnswered     Int                   @default(0) @map("times_answered")
+  timesCorrect      Int                   @default(0) @map("times_correct")
+  averageResponseMs Int                   @default(0) @map("average_response_ms")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  deletedAt         DateTime?             @map("deleted_at")
+  ownerMiniApp      MiniApp?              @relation(fields: [ownerMiniAppId], references: [id], onDelete: Cascade)
+  createdBy         User?                 @relation("QuizQuestionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  category          QuizCategory          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  options           QuizQuestionOption[]
+  sessionQuestions  QuizSessionQuestion[]
+
+  @@index([ownerMiniAppId, status, difficulty])
+  @@index([categoryId, status, isActive])
+  @@map("quiz_questions")
+}
+
+model QuizQuestionOption {
+  id         String       @id @default(cuid())
+  questionId String       @map("question_id")
+  optionText String       @map("option_text")
+  isCorrect  Boolean      @default(false) @map("is_correct")
+  sortOrder  Int          @default(0) @map("sort_order")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, sortOrder])
+  @@map("quiz_question_options")
+}
+
+model QuizSettings {
+  id                        String       @id @default(cuid())
+  miniAppId                 String       @unique @map("mini_app_id")
+  enabled                   Boolean      @default(true)
+  quickEnabled              Boolean      @default(true) @map("quick_enabled")
+  classicEnabled            Boolean      @default(true) @map("classic_enabled")
+  categoryEnabled           Boolean      @default(true) @map("category_enabled")
+  dailyEnabled              Boolean      @default(true) @map("daily_enabled")
+  soundDefault              Boolean      @default(true) @map("sound_default")
+  explanationsEnabled       Boolean      @default(true) @map("explanations_enabled")
+  immediateFeedback         Boolean      @default(true) @map("immediate_feedback")
+  resultReviewEnabled       Boolean      @default(true) @map("result_review_enabled")
+  quickQuestionCount        Int          @default(5) @map("quick_question_count")
+  classicQuestionCount      Int          @default(10) @map("classic_question_count")
+  categoryQuestionCount     Int          @default(10) @map("category_question_count")
+  dailyQuestionCount        Int          @default(10) @map("daily_question_count")
+  avoidRecentQuestions      Boolean      @default(true) @map("avoid_recent_questions")
+  recentWindow              Int          @default(30) @map("recent_window")
+  minimumActiveQuestions    Int          @default(10) @map("minimum_active_questions")
+  allowCustomQuestions      Boolean      @default(true) @map("allow_custom_questions")
+  useGlobalQuestions        Boolean      @default(true) @map("use_global_questions")
+  customWeight              Int          @default(40) @map("custom_weight")
+  globalWeight              Int          @default(60) @map("global_weight")
+  easyTimeSeconds           Int          @default(15) @map("easy_time_seconds")
+  mediumTimeSeconds         Int          @default(18) @map("medium_time_seconds")
+  hardTimeSeconds           Int          @default(22) @map("hard_time_seconds")
+  feedbackDurationMs        Int          @default(1500) @map("feedback_duration_ms")
+  explanationDurationMs     Int          @default(2500) @map("explanation_duration_ms")
+  pauseOnBackground         Boolean      @default(true) @map("pause_on_background")
+  easyBasePoints            Int          @default(10) @map("easy_base_points")
+  mediumBasePoints          Int          @default(20) @map("medium_base_points")
+  hardBasePoints            Int          @default(30) @map("hard_base_points")
+  maxTimeBonusBps           Int          @default(5000) @map("max_time_bonus_bps")
+  streakStepBps             Int          @default(1000) @map("streak_step_bps")
+  maxStreakBonusBps         Int          @default(5000) @map("max_streak_bonus_bps")
+  dailyCompletionBonus      Int          @default(50) @map("daily_completion_bonus")
+  perfectScoreBonus         Int          @default(50) @map("perfect_score_bonus")
+  minimumCompletionPoints   Int          @default(5) @map("minimum_completion_points")
+  scheduledWalletEnabled    Boolean      @default(true) @map("scheduled_wallet_enabled")
+  scheduledWalletAmount     Decimal      @default(0.01) @map("scheduled_wallet_amount") @db.Decimal(18, 6)
+  dailyWalletUserCap        Decimal      @default(0.05) @map("daily_wallet_user_cap") @db.Decimal(18, 6)
+  dailyWalletMiniAppCap     Decimal      @default(100) @map("daily_wallet_mini_app_cap") @db.Decimal(18, 6)
+  maxPayableAdsSession      Int          @default(2) @map("max_payable_ads_session")
+  scheduledRepeatPolicy     RepeatPolicy @default(DAILY) @map("scheduled_repeat_policy")
+  fiftyFiftyEnabled         Boolean      @default(true) @map("fifty_fifty_enabled")
+  extraTimeEnabled          Boolean      @default(true) @map("extra_time_enabled")
+  secondChanceEnabled       Boolean      @default(true) @map("second_chance_enabled")
+  doublePointsEnabled       Boolean      @default(true) @map("double_points_enabled")
+  maxFiftyFifty             Int          @default(1) @map("max_fifty_fifty")
+  maxExtraTime              Int          @default(1) @map("max_extra_time")
+  maxSecondChance           Int          @default(1) @map("max_second_chance")
+  maxDoublePoints           Int          @default(1) @map("max_double_points")
+  quickAdPosition           Int          @default(3) @map("quick_ad_position")
+  classicAdPosition1        Int          @default(5) @map("classic_ad_position_1")
+  classicAdPosition2        Int?         @default(8) @map("classic_ad_position_2")
+  categoryAdPosition        Int          @default(5) @map("category_ad_position")
+  dailyAdPosition           Int          @default(5) @map("daily_ad_position")
+  minSessionBeforeAdSeconds Int          @default(45) @map("min_session_before_ad_seconds")
+  minAdIntervalSeconds      Int          @default(90) @map("min_ad_interval_seconds")
+  utilityDelaySeconds       Int          @default(60) @map("utility_delay_seconds")
+  maxScheduledAdsSession    Int          @default(2) @map("max_scheduled_ads_session")
+  sponsoredLobbyEnabled     Boolean      @default(true) @map("sponsored_lobby_enabled")
+  emergencyDisabled         Boolean      @default(false) @map("emergency_disabled")
+  retryCooldownSeconds      Int          @default(60) @map("retry_cooldown_seconds")
+  maxRetryAttempts          Int          @default(3) @map("max_retry_attempts")
+  pendingExpiryMinutes      Int          @default(1440) @map("pending_expiry_minutes")
+  maxDailyClaims            Int          @default(5) @map("max_daily_claims")
+  pendingLiabilityCap       Decimal      @default(100) @map("pending_liability_cap") @db.Decimal(18, 6)
+  updatedById               String?      @map("updated_by_id")
+  createdAt                 DateTime     @default(now()) @map("created_at")
+  updatedAt                 DateTime     @updatedAt @map("updated_at")
+  miniApp                   MiniApp      @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_settings")
+}
+
+model QuizSession {
+  id                     String                @id @default(cuid())
+  miniAppId              String                @map("mini_app_id")
+  userId                 String                @map("user_id")
+  mode                   QuizMode
+  categoryId             String?               @map("category_id")
+  status                 QuizSessionStatus     @default(ACTIVE)
+  periodKey              String?               @map("period_key")
+  seed                   String
+  configSnapshot         Json                  @map("config_snapshot")
+  currentPosition        Int                   @default(1) @map("current_position")
+  score                  Int                   @default(0)
+  correctCount           Int                   @default(0) @map("correct_count")
+  incorrectCount         Int                   @default(0) @map("incorrect_count")
+  timeoutCount           Int                   @default(0) @map("timeout_count")
+  currentStreak          Int                   @default(0) @map("current_streak")
+  bestStreak             Int                   @default(0) @map("best_streak")
+  scheduledAdsDue        Int                   @default(0) @map("scheduled_ads_due")
+  scheduledAdsCompleted  Int                   @default(0) @map("scheduled_ads_completed")
+  noFillCount            Int                   @default(0) @map("no_fill_count")
+  fiftyFiftyUsed         Int                   @default(0) @map("fifty_fifty_used")
+  extraTimeUsed          Int                   @default(0) @map("extra_time_used")
+  secondChanceUsed       Int                   @default(0) @map("second_chance_used")
+  doublePointsUsed       Int                   @default(0) @map("double_points_used")
+  questionStartedAt      DateTime?             @map("question_started_at")
+  questionAllowedSeconds Int?                  @map("question_allowed_seconds")
+  pausedAt               DateTime?             @map("paused_at")
+  totalPausedMs          Int                   @default(0) @map("total_paused_ms")
+  lastAdCompletedAt      DateTime?             @map("last_ad_completed_at")
+  startedAt              DateTime              @default(now()) @map("started_at")
+  completedAt            DateTime?             @map("completed_at")
+  expiresAt              DateTime              @map("expires_at")
+  finalPoints            Int                   @default(0) @map("final_points")
+  stars                  Int?
+  walletRewardTotal      Decimal               @default(0) @map("wallet_reward_total") @db.Decimal(18, 6)
+  version                Int                   @default(1)
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  miniApp                MiniApp               @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category               QuizCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  questions              QuizSessionQuestion[]
+  claims                 GameRewardClaim[]
+  pointTransaction       PointTransaction?
+
+  @@index([miniAppId, userId, status])
+  @@index([miniAppId, mode, periodKey])
+  @@map("quiz_sessions")
+}
+
+model QuizSessionQuestion {
+  id                String         @id @default(cuid())
+  sessionId         String         @map("session_id")
+  questionId        String?        @map("question_id")
+  position          Int
+  questionText      String         @map("question_text")
+  explanation       String
+  categoryName      String         @map("category_name")
+  difficulty        QuizDifficulty
+  optionsSnapshot   Json           @map("options_snapshot")
+  correctOptionKey  String         @map("correct_option_key")
+  selectedOptionKey String?        @map("selected_option_key")
+  removedOptionKeys Json?          @map("removed_option_keys")
+  answeredAt        DateTime?      @map("answered_at")
+  responseMs        Int?           @map("response_ms")
+  isCorrect         Boolean?       @map("is_correct")
+  timedOut          Boolean        @default(false) @map("timed_out")
+  secondChance      Boolean        @default(false) @map("second_chance")
+  pointsEarned      Int            @default(0) @map("points_earned")
+  startedAt         DateTime?      @map("started_at")
+  allowedSeconds    Int            @map("allowed_seconds")
+  version           Int            @default(1)
+  session           QuizSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question          QuizQuestion?  @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, position])
+  @@index([questionId])
+  @@map("quiz_session_questions")
+}
+
+model QuizDailyChallenge {
+  id               String    @id @default(cuid())
+  miniAppId        String    @map("mini_app_id")
+  userId           String    @map("user_id")
+  periodKey        String    @map("period_key")
+  questionSetKey   String    @map("question_set_key")
+  firstCompletedAt DateTime? @map("first_completed_at")
+  bestScore        Int       @default(0) @map("best_score")
+  bestAccuracyBps  Int       @default(0) @map("best_accuracy_bps")
+  rewardClaimed    Boolean   @default(false) @map("reward_claimed")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  miniApp          MiniApp   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId, periodKey])
+  @@index([miniAppId, periodKey, bestScore])
+  @@map("quiz_daily_challenges")
+}
+
+model TapCollectorSettings {
+  id                     String   @id @default(cuid())
+  miniAppId              String   @unique @map("mini_app_id")
+  enabled                Boolean  @default(true)
+  quickEnabled           Boolean  @default(true) @map("quick_enabled")
+  classicEnabled         Boolean  @default(true) @map("classic_enabled")
+  survivalEnabled        Boolean  @default(true) @map("survival_enabled")
+  dailyEnabled           Boolean  @default(true) @map("daily_enabled")
+  quickWaves             Int      @default(3) @map("quick_waves")
+  classicWaves           Int      @default(5) @map("classic_waves")
+  dailyWaves             Int      @default(4) @map("daily_waves")
+  quickWaveSeconds       Int      @default(20) @map("quick_wave_seconds")
+  classicWaveSeconds     Int      @default(25) @map("classic_wave_seconds")
+  survivalWaveSeconds    Int      @default(30) @map("survival_wave_seconds")
+  dailyWaveSeconds       Int      @default(25) @map("daily_wave_seconds")
+  survivalMaxSeconds     Int      @default(480) @map("survival_max_seconds")
+  initialHealth          Int      @default(3) @map("initial_health")
+  maxVisibleMobile       Int      @default(8) @map("max_visible_mobile")
+  maxVisibleDesktop      Int      @default(10) @map("max_visible_desktop")
+  baseSpawnIntervalMs    Int      @default(1100) @map("base_spawn_interval_ms")
+  minimumSpawnIntervalMs Int      @default(500) @map("minimum_spawn_interval_ms")
+  coinPoints             Int      @default(10) @map("coin_points")
+  gemPoints              Int      @default(25) @map("gem_points")
+  starPoints             Int      @default(40) @map("star_points")
+  missPenalty            Int      @default(0) @map("miss_penalty")
+  harmfulPenalty         Int      @default(25) @map("harmful_penalty")
+  waveBonus              Int      @default(50) @map("wave_bonus")
+  perfectWaveBonus       Int      @default(75) @map("perfect_wave_bonus")
+  healthBonus            Int      @default(30) @map("health_bonus")
+  clockSeconds           Int      @default(5) @map("clock_seconds")
+  maxShieldCount         Int      @default(1) @map("max_shield_count")
+  magnetDurationMs       Int      @default(5000) @map("magnet_duration_ms")
+  freezeDurationMs       Int      @default(5000) @map("freeze_duration_ms")
+  scheduledWalletEnabled Boolean  @default(true) @map("scheduled_wallet_enabled")
+  scheduledWalletAmount  Decimal  @default(0.01) @map("scheduled_wallet_amount") @db.Decimal(18, 6)
+  crateWalletEnabled     Boolean  @default(true) @map("crate_wallet_enabled")
+  crateWalletAmount      Decimal  @default(0.01) @map("crate_wallet_amount") @db.Decimal(18, 6)
+  maxScheduledAdsSession Int      @default(2) @map("max_scheduled_ads_session")
+  maxTotalAdsSession     Int      @default(5) @map("max_total_ads_session")
+  minAdIntervalSeconds   Int      @default(90) @map("min_ad_interval_seconds")
+  continueEnabled        Boolean  @default(true) @map("continue_enabled")
+  shieldAdEnabled        Boolean  @default(true) @map("shield_ad_enabled")
+  magnetAdEnabled        Boolean  @default(true) @map("magnet_ad_enabled")
+  freezeAdEnabled        Boolean  @default(true) @map("freeze_ad_enabled")
+  doublePointsEnabled    Boolean  @default(true) @map("double_points_enabled")
+  sponsoredLobbyEnabled  Boolean  @default(true) @map("sponsored_lobby_enabled")
+  pauseOnBackground      Boolean  @default(true) @map("pause_on_background")
+  emergencyDisabled      Boolean  @default(false) @map("emergency_disabled")
+  version                Int      @default(1)
+  updatedById            String?  @map("updated_by_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  miniApp                MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("tap_collector_settings")
+}
+
+model TapCollectorSession {
+  id                     String                    @id @default(cuid())
+  miniAppId              String                    @map("mini_app_id")
+  userId                 String                    @map("user_id")
+  mode                   TapCollectorMode
+  status                 TapCollectorSessionStatus @default(READY)
+  periodKey              String?                   @map("period_key")
+  seed                   String
+  configSnapshot         Json                      @map("config_snapshot")
+  currentWave            Int                       @default(1) @map("current_wave")
+  level                  Int                       @default(1)
+  totalWaves             Int                       @map("total_waves")
+  waveStartedAt          DateTime?                 @map("wave_started_at")
+  waveEndsAt             DateTime?                 @map("wave_ends_at")
+  score                  Int                       @default(0)
+  basePoints             Int                       @default(0) @map("base_points")
+  bonusPoints            Int                       @default(0) @map("bonus_points")
+  finalPoints            Int                       @default(0) @map("final_points")
+  health                 Int                       @default(3)
+  shieldCount            Int                       @default(0) @map("shield_count")
+  combo                  Int                       @default(0)
+  bestCombo              Int                       @default(0) @map("best_combo")
+  collectedCount         Int                       @default(0) @map("collected_count")
+  missedCount            Int                       @default(0) @map("missed_count")
+  harmfulTapCount        Int                       @default(0) @map("harmful_tap_count")
+  totalSpawned           Int                       @default(0) @map("total_spawned")
+  scheduledAdsDue        Int                       @default(0) @map("scheduled_ads_due")
+  scheduledAdsCompleted  Int                       @default(0) @map("scheduled_ads_completed")
+  utilityAdsUsed         Int                       @default(0) @map("utility_ads_used")
+  sponsoredCratesSpawned Int                       @default(0) @map("sponsored_crates_spawned")
+  sponsoredCratesClaimed Int                       @default(0) @map("sponsored_crates_claimed")
+  walletRewardTotal      Decimal                   @default(0) @map("wallet_reward_total") @db.Decimal(18, 6)
+  pausedAt               DateTime?                 @map("paused_at")
+  pausedMs               Int                       @default(0) @map("paused_ms")
+  activeElapsedMs        Int?                      @map("active_elapsed_ms")
+  failureCause           String?                   @map("failure_cause")
+  failedEventId          String?                   @map("failed_event_id")
+  lastEventSequence      Int                       @default(0) @map("last_event_sequence")
+  lastInteractionAt      DateTime?                 @map("last_interaction_at")
+  lastAdCompletedAt      DateTime?                 @map("last_ad_completed_at")
+  riskScore              Int                       @default(0) @map("risk_score")
+  riskSignals            Json?                     @map("risk_signals")
+  stars                  Int?
+  startedAt              DateTime?                 @map("started_at")
+  lastActivityAt         DateTime                  @default(now()) @map("last_activity_at")
+  completedAt            DateTime?                 @map("completed_at")
+  expiresAt              DateTime                  @map("expires_at")
+  version                Int                       @default(1)
+  createdAt              DateTime                  @default(now()) @map("created_at")
+  updatedAt              DateTime                  @updatedAt @map("updated_at")
+  miniApp                MiniApp                   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events                 TapCollectorSpawnEvent[]
+  claims                 GameRewardClaim[]
+  pointTransaction       PointTransaction?
+
+  @@index([miniAppId, userId, status])
+  @@index([miniAppId, mode, periodKey])
+  @@map("tap_collector_sessions")
+}
+
+model TapCollectorSpawnEvent {
+  id                String              @id @default(cuid())
+  sessionId         String              @map("session_id")
+  wave              Int
+  sequence          Int
+  itemType          TapItemType         @map("item_type")
+  itemClass         TapItemClass        @default(STANDARD) @map("item_class")
+  itemKey           String              @default("gem") @map("item_key")
+  required          Boolean             @default(true)
+  movementType      TapMovementType     @map("movement_type")
+  normalizedX       Int                 @map("normalized_x")
+  normalizedY       Int                 @map("normalized_y")
+  lane              Int                 @default(0)
+  speedTier         Int                 @map("speed_tier")
+  baseValue         Int                 @map("base_value")
+  spawnedAtOffsetMs Int                 @map("spawned_at_offset_ms")
+  expiresAtOffsetMs Int                 @map("expires_at_offset_ms")
+  fallDurationMs    Int                 @default(4000) @map("fall_duration_ms")
+  status            TapSpawnStatus      @default(SCHEDULED)
+  collectedAt       DateTime?           @map("collected_at")
+  missedAt          DateTime?           @map("missed_at")
+  processedKey      String?             @unique @map("processed_key")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  session           TapCollectorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  claims            GameRewardClaim[]
+
+  @@unique([sessionId, wave, sequence])
+  @@index([sessionId, wave, status])
+  @@map("tap_collector_spawn_events")
+}
+
+model TapCollectorDailyHunt {
+  id               String    @id @default(cuid())
+  miniAppId        String    @map("mini_app_id")
+  userId           String    @map("user_id")
+  periodKey        String    @map("period_key")
+  seed             String
+  firstCompletedAt DateTime? @map("first_completed_at")
+  bestScore        Int       @default(0) @map("best_score")
+  rewardClaimed    Boolean   @default(false) @map("reward_claimed")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  miniApp          MiniApp   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId, periodKey])
+  @@index([miniAppId, periodKey, bestScore])
+  @@map("tap_collector_daily_hunts")
+}
+
+model RewardDailyUsage {
+  id              String   @id @default(cuid())
+  miniAppId       String   @map("mini_app_id")
+  userId          String?  @map("user_id")
+  usageDate       DateTime @map("usage_date") @db.Date
+  moneyClaimCount Int      @default(0) @map("money_claim_count")
+  coinClaimCount  Int      @default(0) @map("coin_claim_count")
+  walletAmount    Decimal  @default(0) @map("wallet_amount") @db.Decimal(18, 6)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  miniApp         MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, userId, usageDate])
+  @@index([miniAppId, usageDate])
+  @@map("reward_daily_usage")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  miniAppId   String?  @map("mini_app_id")
+  actorUserId String   @map("actor_user_id")
+  action      String
+  targetType  String   @map("target_type")
+  targetId    String?  @map("target_id")
+  before      Json?
+  after       Json?
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  miniApp     MiniApp? @relation(fields: [miniAppId], references: [id], onDelete: SetNull)
+  actor       User     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([miniAppId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("admin_audit_logs")
+}
+
 model GameScore {
-  id        String @id @default(cuid())
-  userId    String @map("user_id")
-  gameId    String @map("game_id")
-  sessionId String? @map("session_id")
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+  gameId    String       @map("game_id")
+  sessionId String?      @map("session_id")
   score     Int
   rank      Int?
   metadata  Json?
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game      Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now()) @map("created_at")
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
   session   GameSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
   @@index([gameId, score(sort: Desc)])
   @@index([userId, gameId])
   @@map("game_scores")
@@ -206,18 +1850,20 @@ model MemoryMatchStats {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("memory_match_stats")
 }
 
 model Achievement {
-  id          String   @id @default(cuid())
-  key         String   @unique
+  id          String            @id @default(cuid())
+  key         String            @unique
   title       String
   description String
-  gameSlug    String?  @map("game_slug")
+  gameSlug    String?           @map("game_slug")
   config      Json?
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt   DateTime          @default(now()) @map("created_at")
   users       UserAchievement[]
+
   @@index([gameSlug])
   @@map("achievements")
 }
@@ -232,99 +1878,674 @@ model UserAchievement {
   updatedAt     DateTime    @updatedAt @map("updated_at")
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
   @@unique([userId, achievementId])
   @@index([userId, unlockedAt])
   @@map("user_achievements")
 }
 
 model Task {
-  id          String @id @default(cuid())
-  slug        String @unique
-  title       String
-  description String
-  status      TaskStatus @default(DRAFT)
-  reward      Decimal @default(0) @db.Decimal(18, 6)
-  config      Json?
-  startsAt    DateTime? @map("starts_at")
-  endsAt      DateTime? @map("ends_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  completions TaskCompletion[]
+  id                       String                     @id @default(cuid())
+  miniAppId                String                     @map("mini_app_id")
+  slug                     String
+  title                    String
+  description              String
+  instructions             String                     @default("")
+  category                 String                     @default("OTHER")
+  type                     TaskType                   @default(WEBSITE_VISIT)
+  status                   TaskStatus                 @default(DRAFT)
+  featured                 Boolean                    @default(false)
+  priority                 Int                        @default(0)
+  destinationUrl           String?                    @map("destination_url")
+  verificationMethod       TaskVerificationMethod     @default(REINFORCED_SELF_CONFIRMATION) @map("verification_method")
+  verificationStrength     TaskVerificationStrength   @default(REINFORCED_SELF_CONFIRMATION) @map("verification_strength")
+  minimumEngagementSeconds Int                        @default(20) @map("minimum_engagement_seconds")
+  completionWindowMinutes  Int                        @default(1440) @map("completion_window_minutes")
+  maxConfirmationAttempts  Int                        @default(3) @map("max_confirmation_attempts")
+  proofRequired            Boolean                    @default(false) @map("proof_required")
+  rewardType               TaskRewardType             @default(POINTS) @map("reward_type")
+  rewardPoints             Int                        @default(0) @map("reward_points")
+  rewardWallet             Decimal                    @default(0) @map("reward_wallet") @db.Decimal(18, 6)
+  repeatPolicy             TaskRepeatPolicy           @default(ONCE) @map("repeat_policy")
+  maximumCompletions       Int?                       @map("maximum_completions")
+  completionsCount         Int                        @default(0) @map("completions_count")
+  totalBudget              Decimal                    @default(0) @map("total_budget") @db.Decimal(18, 6)
+  reservedBudget           Decimal                    @default(0) @map("reserved_budget") @db.Decimal(18, 6)
+  spentBudget              Decimal                    @default(0) @map("spent_budget") @db.Decimal(18, 6)
+  estimatedSeconds         Int                        @default(30) @map("estimated_seconds")
+  startsAt                 DateTime?                  @map("starts_at")
+  endsAt                   DateTime?                  @map("ends_at")
+  emergencyDisabled        Boolean                    @default(false) @map("emergency_disabled")
+  version                  Int                        @default(1)
+  config                   Json?
+  createdAt                DateTime                   @default(now()) @map("created_at")
+  updatedAt                DateTime                   @updatedAt @map("updated_at")
+  miniApp                  MiniApp                    @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  completions              TaskCompletion[]
+  attempts                 TaskAttempt[]
+  questions                TaskConfirmationQuestion[]
+
+  @@unique([miniAppId, slug])
+  @@index([miniAppId, status, priority])
   @@index([status, startsAt, endsAt])
   @@map("tasks")
 }
 
 model TaskCompletion {
-  id          String @id @default(cuid())
-  userId      String @map("user_id")
-  taskId      String @map("task_id")
-  status      TaskCompletionStatus @default(STARTED)
-  rewardEarned Decimal @default(0) @db.Decimal(18, 6) @map("reward_earned")
-  proof       Json?
-  completedAt DateTime? @map("completed_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task        Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  id           String               @id @default(cuid())
+  userId       String               @map("user_id")
+  taskId       String               @map("task_id")
+  status       TaskCompletionStatus @default(STARTED)
+  rewardEarned Decimal              @default(0) @map("reward_earned") @db.Decimal(18, 6)
+  proof        Json?
+  completedAt  DateTime?            @map("completed_at")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task         Task                 @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
   @@unique([userId, taskId])
   @@index([status])
   @@map("task_completions")
 }
 
+model TaskSettings {
+  id                       String   @id @default(cuid())
+  miniAppId                String   @unique @map("mini_app_id")
+  enabled                  Boolean  @default(true)
+  pointsRewardsEnabled     Boolean  @default(true) @map("points_rewards_enabled")
+  walletRewardsEnabled     Boolean  @default(false) @map("wallet_rewards_enabled")
+  selfConfirmationEnabled  Boolean  @default(true) @map("self_confirmation_enabled")
+  manualProofEnabled       Boolean  @default(true) @map("manual_proof_enabled")
+  maximumActiveTasks       Int      @default(50) @map("maximum_active_tasks")
+  maximumWalletRewardTask  Decimal  @default(1) @map("maximum_wallet_reward_task") @db.Decimal(18, 6)
+  maximumPointsRewardTask  Int      @default(10000) @map("maximum_points_reward_task")
+  userDailyWalletCap       Decimal  @default(5) @map("user_daily_wallet_cap") @db.Decimal(18, 6)
+  userDailyPointsCap       Int      @default(50000) @map("user_daily_points_cap")
+  miniAppDailyBudget       Decimal  @default(500) @map("mini_app_daily_budget") @db.Decimal(18, 6)
+  defaultEngagementSeconds Int      @default(20) @map("default_engagement_seconds")
+  proofRetentionDays       Int      @default(30) @map("proof_retention_days")
+  emergencyDisabled        Boolean  @default(false) @map("emergency_disabled")
+  updatedById              String?  @map("updated_by_id")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  miniApp                  MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("task_settings")
+}
+
+model TaskConfirmationQuestion {
+  id            String           @id @default(cuid())
+  taskId        String           @map("task_id")
+  type          TaskQuestionType
+  prompt        String
+  options       Json?
+  answerHash    String           @map("answer_hash")
+  salt          String
+  caseSensitive Boolean          @default(false) @map("case_sensitive")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  task          Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_confirmation_questions")
+}
+
+model TaskAttempt {
+  id                       String             @id @default(cuid())
+  miniAppId                String             @map("mini_app_id")
+  userId                   String             @map("user_id")
+  taskId                   String             @map("task_id")
+  periodKey                String             @map("period_key")
+  status                   TaskAttemptStatus  @default(STARTED)
+  taskVersion              Int                @map("task_version")
+  nonce                    String             @unique
+  rewardType               TaskRewardType     @map("reward_type")
+  rewardPoints             Int                @map("reward_points")
+  rewardWallet             Decimal            @map("reward_wallet") @db.Decimal(18, 6)
+  minimumEngagementSeconds Int                @map("minimum_engagement_seconds")
+  destinationOpenedAt      DateTime?          @map("destination_opened_at")
+  returnedAt               DateTime?          @map("returned_at")
+  submittedAt              DateTime?          @map("submitted_at")
+  verifiedAt               DateTime?          @map("verified_at")
+  rewardedAt               DateTime?          @map("rewarded_at")
+  expiresAt                DateTime           @map("expires_at")
+  confirmationFailures     Int                @default(0) @map("confirmation_failures")
+  riskScore                Int                @default(0) @map("risk_score")
+  riskSignals              Json?              @map("risk_signals")
+  pointTransactionId       String?            @unique @map("point_transaction_id")
+  walletTransactionId      String?            @unique @map("wallet_transaction_id")
+  createdAt                DateTime           @default(now()) @map("created_at")
+  updatedAt                DateTime           @updatedAt @map("updated_at")
+  miniApp                  MiniApp            @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user                     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task                     Task               @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  events                   TaskAttemptEvent[]
+  submission               TaskSubmission?
+
+  @@unique([miniAppId, userId, taskId, periodKey])
+  @@index([miniAppId, userId, status])
+  @@map("task_attempts")
+}
+
+model TaskAttemptEvent {
+  id             String      @id @default(cuid())
+  attemptId      String      @map("attempt_id")
+  type           String
+  idempotencyKey String      @map("idempotency_key")
+  metadata       Json?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  attempt        TaskAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, idempotencyKey])
+  @@index([attemptId, createdAt])
+  @@map("task_attempt_events")
+}
+
+model TaskSubmission {
+  id                String            @id @default(cuid())
+  miniAppId         String            @map("mini_app_id")
+  userId            String            @map("user_id")
+  attemptId         String            @unique @map("attempt_id")
+  status            TaskAttemptStatus @default(PENDING_VERIFICATION)
+  verificationLabel String            @map("verification_label")
+  answerText        String?           @map("answer_text")
+  userVisibleReason String?           @map("user_visible_reason")
+  reviewedById      String?           @map("reviewed_by_id")
+  reviewedAt        DateTime?         @map("reviewed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  miniApp           MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt           TaskAttempt       @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  proofs            TaskProof[]
+
+  @@index([miniAppId, status, createdAt])
+  @@map("task_submissions")
+}
+
+model TaskProof {
+  id           String         @id @default(cuid())
+  submissionId String         @map("submission_id")
+  kind         String
+  storageKey   String         @map("storage_key")
+  mimeType     String         @map("mime_type")
+  sizeBytes    Int            @map("size_bytes")
+  sha256       String
+  originalName String         @map("original_name")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  submission   TaskSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([sha256])
+  @@map("task_proofs")
+}
+
+model WalletSettings {
+  id                             String                   @id @default(cuid())
+  miniAppId                      String                   @unique @map("mini_app_id")
+  currency                       String                   @default("USD") @db.VarChar(3)
+  walletEnabled                  Boolean                  @default(true) @map("wallet_enabled")
+  withdrawalsEnabled             Boolean                  @default(false) @map("withdrawals_enabled")
+  conversionEnabled              Boolean                  @default(false) @map("conversion_enabled")
+  conversionEmergencyDisabled    Boolean                  @default(false) @map("conversion_emergency_disabled")
+  pointsPerDollar                Int                      @default(1000) @map("points_per_dollar")
+  minimumConversionPoints        Int                      @default(1000) @map("minimum_conversion_points")
+  maximumConversionPointsRequest Int                      @default(100000) @map("maximum_conversion_points_request")
+  maximumConversionPointsDay     Int                      @default(100000) @map("maximum_conversion_points_day")
+  maximumConversionCreditDay     Decimal                  @default(100) @map("maximum_conversion_credit_day") @db.Decimal(18, 6)
+  conversionFeeBps               Int                      @default(0) @map("conversion_fee_bps")
+  conversionRounding             ConversionRoundingRule   @default(DOWN) @map("conversion_rounding")
+  minimumWithdrawal              Decimal                  @default(10) @map("minimum_withdrawal") @db.Decimal(18, 6)
+  maximumWithdrawal              Decimal                  @default(1000) @map("maximum_withdrawal") @db.Decimal(18, 6)
+  maximumWithdrawalDay           Decimal                  @default(2000) @map("maximum_withdrawal_day") @db.Decimal(18, 6)
+  maximumMiniAppPayoutDay        Decimal                  @default(10000) @map("maximum_mini_app_payout_day") @db.Decimal(18, 6)
+  maximumOutstandingLiability    Decimal                  @default(50000) @map("maximum_outstanding_liability") @db.Decimal(18, 6)
+  cancellationMinutes            Int                      @default(30) @map("cancellation_minutes")
+  emergencyDisabled              Boolean                  @default(false) @map("emergency_disabled")
+  updatedById                    String?                  @map("updated_by_id")
+  lastReconciledAt               DateTime?                @map("last_reconciled_at")
+  reconciliationStatus           String                   @default("NOT_RUN") @map("reconciliation_status")
+  withdrawalProcessingMode       WithdrawalProcessingMode @default(MANUAL) @map("withdrawal_processing_mode")
+  createdAt                      DateTime                 @default(now()) @map("created_at")
+  updatedAt                      DateTime                 @updatedAt @map("updated_at")
+  miniApp                        MiniApp                  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_settings")
+}
+
+model WalletPayoutMethod {
+  id                String                 @id @default(cuid())
+  miniAppId         String                 @map("mini_app_id")
+  code              String
+  name              String
+  instructions      String
+  destinationLabel  String                 @map("destination_label")
+  validationPattern String?                @map("validation_pattern")
+  enabled           Boolean                @default(false)
+  archivedAt        DateTime?              @map("archived_at")
+  minimumAmount     Decimal                @default(10) @map("minimum_amount") @db.Decimal(18, 6)
+  maximumAmount     Decimal                @default(1000) @map("maximum_amount") @db.Decimal(18, 6)
+  fixedFee          Decimal                @default(0) @map("fixed_fee") @db.Decimal(18, 6)
+  feeBasisPoints    Int                    @default(0) @map("fee_basis_points")
+  sortOrder         Int                    @default(0) @map("sort_order")
+  provider          PayoutProvider?        @default(OXAPAY)
+  currencySymbol    String?                @map("currency_symbol") @db.VarChar(16)
+  networkCode       String?                @map("network_code") @db.VarChar(64)
+  catalogNetworkId  String?                @map("catalog_network_id")
+  automaticEligible Boolean                @default(false) @map("automatic_eligible")
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+  miniApp           MiniApp                @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+  withdrawals       Withdrawal[]
+  catalogNetwork    OxaPayCurrencyNetwork? @relation(fields: [catalogNetworkId], references: [id], onDelete: SetNull)
+
+  @@unique([miniAppId, code])
+  @@unique([miniAppId, provider, currencySymbol, networkCode])
+  @@index([miniAppId, enabled, sortOrder])
+  @@map("wallet_payout_methods")
+}
+
+model PointConversion {
+  id                  String            @id @default(cuid())
+  miniAppId           String            @map("mini_app_id")
+  userId              String            @map("user_id")
+  walletId            String            @map("wallet_id")
+  idempotencyKey      String            @map("idempotency_key")
+  points              Int
+  pointsPerDollar     Int               @map("points_per_dollar")
+  feeBasisPoints      Int               @map("fee_basis_points")
+  grossAmount         Decimal           @map("gross_amount") @db.Decimal(18, 6)
+  feeAmount           Decimal           @map("fee_amount") @db.Decimal(18, 6)
+  netAmount           Decimal           @map("net_amount") @db.Decimal(18, 6)
+  pointTransactionId  String            @unique @map("point_transaction_id")
+  walletTransactionId String            @unique @map("wallet_transaction_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  miniApp             MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  wallet              Wallet            @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  pointTransaction    PointTransaction  @relation(fields: [pointTransactionId], references: [id], onDelete: Restrict)
+  walletTransaction   WalletTransaction @relation(fields: [walletTransactionId], references: [id], onDelete: Restrict)
+
+  @@unique([miniAppId, userId, idempotencyKey])
+  @@index([miniAppId, userId, createdAt])
+  @@map("point_conversions")
+}
+
 model Withdrawal {
-  id          String @id @default(cuid())
-  userId      String @map("user_id")
-  amount      Decimal @db.Decimal(18, 6)
-  fee         Decimal @default(0) @db.Decimal(18, 6)
-  status      WithdrawalStatus @default(PENDING)
-  method      String
-  destination String
-  externalId  String? @map("external_id")
-  metadata    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  processedAt DateTime? @map("processed_at")
-  user        User @relation(fields: [userId], references: [id], onDelete: Restrict)
-  @@index([userId, createdAt])
-  @@index([status])
+  id                      String                   @id @default(cuid())
+  miniAppId               String                   @map("mini_app_id")
+  userId                  String                   @map("user_id")
+  walletId                String                   @map("wallet_id")
+  payoutMethodId          String                   @map("payout_method_id")
+  idempotencyKey          String                   @map("idempotency_key")
+  amount                  Decimal                  @db.Decimal(18, 6)
+  fee                     Decimal                  @default(0) @db.Decimal(18, 6)
+  netAmount               Decimal                  @map("net_amount") @db.Decimal(18, 6)
+  status                  WithdrawalStatus         @default(PENDING)
+  destinationEncrypted    String                   @map("destination_encrypted")
+  destinationMasked       String                   @map("destination_masked")
+  externalId              String?                  @map("external_id")
+  riskStatus              WalletRiskStatus         @default(CLEAR) @map("risk_status")
+  reviewNote              String?                  @map("review_note")
+  holdTransactionId       String                   @unique @map("hold_transaction_id")
+  completionTransactionId String?                  @unique @map("completion_transaction_id")
+  reversalTransactionId   String?                  @unique @map("reversal_transaction_id")
+  metadata                Json?
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  processedAt             DateTime?                @map("processed_at")
+  processingMode          WithdrawalProcessingMode @default(MANUAL) @map("processing_mode")
+  payoutCurrency          String?                  @map("payout_currency") @db.VarChar(16)
+  payoutNetwork           String?                  @map("payout_network") @db.VarChar(64)
+  memoEncrypted           String?                  @map("memo_encrypted")
+  requestedWalletValue    Decimal?                 @map("requested_wallet_value") @db.Decimal(18, 6)
+  pricingSource           String?                  @map("pricing_source") @db.VarChar(64)
+  quotedExchangeRate      Decimal?                 @map("quoted_exchange_rate") @db.Decimal(36, 18)
+  quoteTimestamp          DateTime?                @map("quote_timestamp")
+  grossCryptoAmount       Decimal?                 @map("gross_crypto_amount") @db.Decimal(36, 18)
+  providerFee             Decimal?                 @map("provider_fee") @db.Decimal(36, 18)
+  platformFee             Decimal?                 @map("platform_fee") @db.Decimal(18, 6)
+  netCryptoAmount         Decimal?                 @map("net_crypto_amount") @db.Decimal(36, 18)
+  providerStatus          ProviderPayoutStatus     @default(NOT_SUBMITTED) @map("provider_status")
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  miniApp                 MiniApp                  @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  wallet                  Wallet                   @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  payoutMethod            WalletPayoutMethod       @relation(fields: [payoutMethodId], references: [id], onDelete: Restrict)
+  holdTransaction         WalletTransaction        @relation("WithdrawalHoldTransaction", fields: [holdTransactionId], references: [id], onDelete: Restrict)
+  completionTransaction   WalletTransaction?       @relation("WithdrawalCompletionTransaction", fields: [completionTransactionId], references: [id], onDelete: Restrict)
+  reversalTransaction     WalletTransaction?       @relation("WithdrawalReversalTransaction", fields: [reversalTransactionId], references: [id], onDelete: Restrict)
+  oxaPayAttempt           OxaPayPayoutAttempt?
+
+  @@unique([miniAppId, userId, idempotencyKey])
+  @@index([miniAppId, userId, createdAt])
+  @@index([miniAppId, status, createdAt])
   @@map("withdrawals")
 }
 
+model TenantOxaPayCredential {
+  id                         String    @id @default(cuid())
+  miniAppId                  String    @unique @map("mini_app_id")
+  payoutApiKeyEncrypted      String    @map("payout_api_key_encrypted")
+  payoutApiKeyMasked         String    @map("payout_api_key_masked") @db.VarChar(32)
+  callbackKey                String    @unique @map("callback_key") @db.VarChar(64)
+  configuredByUserId         String    @map("configured_by_user_id")
+  configuredAt               DateTime  @default(now()) @map("configured_at")
+  lastSuccessfulVerification DateTime? @map("last_successful_verification")
+  lastFailedVerification     DateTime? @map("last_failed_verification")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  miniApp                    MiniApp   @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_oxapay_credentials")
+}
+
+model OxaPayCurrency {
+  id             String                  @id @default(cuid())
+  symbol         String                  @unique @db.VarChar(16)
+  name           String                  @db.VarChar(80)
+  isActive       Boolean                 @default(true) @map("is_active")
+  sourceVersion  String?                 @map("source_version") @db.VarChar(32)
+  rawMetadata    Json?                   @map("raw_metadata")
+  synchronizedAt DateTime                @map("synchronized_at")
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+  networks       OxaPayCurrencyNetwork[]
+
+  @@map("oxapay_currencies")
+}
+
+model OxaPayCurrencyNetwork {
+  id                    String               @id @default(cuid())
+  currencyId            String               @map("currency_id")
+  networkCode           String               @map("network_code") @db.VarChar(64)
+  networkName           String               @map("network_name") @db.VarChar(100)
+  isActive              Boolean              @default(true) @map("is_active")
+  withdrawalMinimum     Decimal              @map("withdrawal_minimum") @db.Decimal(36, 18)
+  withdrawalFee         Decimal              @map("withdrawal_fee") @db.Decimal(36, 18)
+  requiredConfirmations Int?                 @map("required_confirmations")
+  memoSupported         Boolean              @default(false) @map("memo_supported")
+  rawMetadata           Json?                @map("raw_metadata")
+  synchronizedAt        DateTime             @map("synchronized_at")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  currency              OxaPayCurrency       @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  payoutMethods         WalletPayoutMethod[]
+
+  @@unique([currencyId, networkCode])
+  @@index([isActive, synchronizedAt])
+  @@map("oxapay_currency_networks")
+}
+
+model OxaPayPayoutAttempt {
+  id                 String               @id @default(cuid())
+  miniAppId          String               @map("mini_app_id")
+  withdrawalId       String               @unique @map("withdrawal_id")
+  submissionKey      String               @unique @map("submission_key")
+  trackId            String?              @unique @map("track_id") @db.VarChar(160)
+  providerStatus     ProviderPayoutStatus @default(NOT_SUBMITTED) @map("provider_status")
+  requestFingerprint String               @map("request_fingerprint") @db.VarChar(64)
+  submittedAt        DateTime?            @map("submitted_at")
+  lastCheckedAt      DateTime?            @map("last_checked_at")
+  finalizedAt        DateTime?            @map("finalized_at")
+  failureCode        String?              @map("failure_code") @db.VarChar(64)
+  callbackDigests    Json                 @default("[]") @map("callback_digests")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  miniApp            MiniApp              @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  withdrawal         Withdrawal           @relation(fields: [withdrawalId], references: [id], onDelete: Restrict)
+
+  @@index([miniAppId, providerStatus, createdAt])
+  @@map("oxapay_payout_attempts")
+}
+
+model PlatformIntegrationSettings {
+  id                            String    @id @default("platform")
+  oxaPaySignupUrl               String?   @map("oxapay_signup_url")
+  oxaPaySignupLabel             String    @default("Sign up HERE") @map("oxapay_signup_label") @db.VarChar(80)
+  oxaPayHelpText                String?   @map("oxapay_help_text") @db.VarChar(500)
+  oxaPaySignupEnabled           Boolean   @default(false) @map("oxapay_signup_enabled")
+  oxaPayAutomaticDisabled       Boolean   @default(false) @map("oxapay_automatic_disabled")
+  oxaPayAutomaticDisabledReason String?   @map("oxapay_automatic_disabled_reason") @db.VarChar(300)
+  adsGalaxyEmergencyDisabled    Boolean   @default(false) @map("ads_galaxy_emergency_disabled")
+  oxaPayCatalogSynchronizedAt   DateTime? @map("oxapay_catalog_synchronized_at")
+  updatedBySuperAdminId         String?   @map("updated_by_super_admin_id")
+  createdAt                     DateTime  @default(now()) @map("created_at")
+  updatedAt                     DateTime  @updatedAt @map("updated_at")
+
+  @@map("platform_integration_settings")
+}
+
+model PlatformConfiguration {
+  id                            String   @id @default("platform")
+  displayName                   String   @default("Ads Galaxy") @map("display_name") @db.VarChar(100)
+  primaryPublicUrl              String?  @map("primary_public_url")
+  supportUrl                    String?  @map("support_url")
+  supportUsername               String?  @map("support_username") @db.VarChar(64)
+  privacyUrl                    String?  @map("privacy_url")
+  termsUrl                      String?  @map("terms_url")
+  maintenanceMode               Boolean  @default(false) @map("maintenance_mode")
+  maintenanceMessage            String?  @map("maintenance_message") @db.VarChar(500)
+  registrationEnabled           Boolean  @default(true) @map("registration_enabled")
+  newTenantDefaults             Json     @default("{}") @map("new_tenant_defaults")
+  inactivityPolicyEnabled       Boolean  @default(true) @map("inactivity_policy_enabled")
+  inactivityAutomaticSuspension Boolean  @default(false) @map("inactivity_automatic_suspension")
+  inactivityWindowDays          Int      @default(7) @map("inactivity_window_days")
+  inactivityMinimumUsers        Int      @default(10) @map("inactivity_minimum_users")
+  inactivityGraceDays           Int      @default(14) @map("inactivity_grace_days")
+  inactivityWarningDays         Int      @default(2) @map("inactivity_warning_days")
+  inactivityCooldownDays        Int      @default(7) @map("inactivity_cooldown_days")
+  inactivitySuspensionMessage   String   @default("This Mini App is temporarily unavailable while its activity status is reviewed.") @map("inactivity_suspension_message") @db.VarChar(300)
+  updatedBySuperAdminId         String?  @map("updated_by_super_admin_id")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_configuration")
+}
+
+model GamePlatformDefault {
+  id                String               @id @default(cuid())
+  gameKey           String               @unique @map("game_key") @db.VarChar(40)
+  enabled           Boolean              @default(true)
+  emergencyDisabled Boolean              @default(false) @map("emergency_disabled")
+  configuration     Json                 @default("{}")
+  updatedByUserId   String?              @map("updated_by_user_id")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  overrides         GameTenantOverride[]
+
+  @@map("game_platform_defaults")
+}
+
+model GameTenantOverride {
+  id              String              @id @default(cuid())
+  defaultId       String              @map("default_id")
+  miniAppId       String              @map("mini_app_id")
+  configuration   Json
+  updatedByUserId String?             @map("updated_by_user_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  gameDefault     GamePlatformDefault @relation(fields: [defaultId], references: [id], onDelete: Cascade)
+  miniApp         MiniApp             @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([defaultId, miniAppId])
+  @@index([miniAppId])
+  @@map("game_tenant_overrides")
+}
+
+model SponsoredCampaign {
+  id               String                    @id @default(cuid())
+  name             String                    @db.VarChar(120)
+  sponsorName      String                    @map("sponsor_name") @db.VarChar(120)
+  title            String                    @db.VarChar(160)
+  description      String                    @db.VarChar(500)
+  imageReference   String?                   @map("image_reference")
+  buttonText       String                    @map("button_text") @db.VarChar(50)
+  destinationUrl   String                    @map("destination_url")
+  disclosureText   String                    @default("Sponsored") @map("disclosure_text") @db.VarChar(40)
+  backgroundStyle  String                    @default("TEAL") @map("background_style") @db.VarChar(20)
+  placement        String                    @db.VarChar(40)
+  status           String                    @default("DRAFT") @db.VarChar(20)
+  priority         Int                       @default(0)
+  targetingMode    String                    @default("ALL_TENANTS") @map("targeting_mode") @db.VarChar(24)
+  startsAt         DateTime?                 @map("starts_at")
+  endsAt           DateTime?                 @map("ends_at")
+  maxImpressions   Int?                      @map("max_impressions")
+  maxClicks        Int?                      @map("max_clicks")
+  perUserFrequency Int                       @default(1) @map("per_user_frequency")
+  createdByUserId  String                    @map("created_by_user_id")
+  updatedByUserId  String                    @map("updated_by_user_id")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  tenants          SponsoredCampaignTenant[]
+  events           SponsoredCampaignEvent[]
+
+  @@index([status, placement, startsAt, endsAt])
+  @@map("sponsored_campaigns")
+}
+
+model SponsoredCampaignTenant {
+  campaignId String            @map("campaign_id")
+  miniAppId  String            @map("mini_app_id")
+  campaign   SponsoredCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  miniApp    MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, miniAppId])
+  @@index([miniAppId])
+  @@map("sponsored_campaign_tenants")
+}
+
+model SponsoredCampaignEvent {
+  id               String            @id @default(cuid())
+  campaignId       String            @map("campaign_id")
+  miniAppId        String            @map("mini_app_id")
+  userId           String            @map("user_id")
+  eventType        String            @map("event_type") @db.VarChar(16)
+  placement        String            @db.VarChar(40)
+  sessionReference String            @map("session_reference") @db.VarChar(100)
+  deduplicationKey String            @unique @map("deduplication_key") @db.VarChar(120)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  campaign         SponsoredCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  miniApp          MiniApp           @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, eventType, createdAt])
+  @@index([miniAppId, createdAt])
+  @@map("sponsored_campaign_events")
+}
+
+model TenantInactivityEvaluation {
+  id              String   @id @default(cuid())
+  miniAppId       String   @map("mini_app_id")
+  windowStart     DateTime @map("window_start")
+  windowEnd       DateTime @map("window_end")
+  legitimateUsers Int      @map("legitimate_users")
+  requiredUsers   Int      @map("required_users")
+  result          String   @db.VarChar(32)
+  dryRun          Boolean  @default(false) @map("dry_run")
+  actionTaken     Boolean  @default(false) @map("action_taken")
+  evaluatedAt     DateTime @default(now()) @map("evaluated_at")
+  miniApp         MiniApp  @relation(fields: [miniAppId], references: [id], onDelete: Cascade)
+
+  @@unique([miniAppId, windowStart, windowEnd, dryRun])
+  @@index([evaluatedAt])
+  @@map("tenant_inactivity_evaluations")
+}
+
+model PlatformAlertRule {
+  id              String          @id @default(cuid())
+  type            String          @unique @db.VarChar(64)
+  enabled         Boolean         @default(true)
+  threshold       Int
+  windowMinutes   Int             @map("window_minutes")
+  severity        String          @db.VarChar(16)
+  lastTriggeredAt DateTime?       @map("last_triggered_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  alerts          PlatformAlert[]
+
+  @@map("platform_alert_rules")
+}
+
+model PlatformAlert {
+  id               String             @id @default(cuid())
+  ruleId           String?            @map("rule_id")
+  miniAppId        String?            @map("mini_app_id")
+  type             String             @db.VarChar(64)
+  severity         String             @db.VarChar(16)
+  status           String             @default("OPEN") @db.VarChar(16)
+  title            String             @db.VarChar(160)
+  summary          String             @db.VarChar(500)
+  firstDetectedAt  DateTime           @default(now()) @map("first_detected_at")
+  lastDetectedAt   DateTime           @default(now()) @map("last_detected_at")
+  acknowledgedById String?            @map("acknowledged_by_id")
+  resolvedById     String?            @map("resolved_by_id")
+  rule             PlatformAlertRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  miniApp          MiniApp?           @relation(fields: [miniAppId], references: [id], onDelete: SetNull)
+
+  @@index([status, severity, lastDetectedAt])
+  @@index([miniAppId, status])
+  @@map("platform_alerts")
+}
+
+model WalletAdjustment {
+  id                  String             @id @default(cuid())
+  miniAppId           String             @map("mini_app_id")
+  userId              String             @map("user_id")
+  actorUserId         String             @map("actor_user_id")
+  idempotencyKey      String             @map("idempotency_key")
+  kind                String
+  walletAmount        Decimal?           @map("wallet_amount") @db.Decimal(18, 6)
+  pointsAmount        Int?               @map("points_amount")
+  reason              String
+  walletTransactionId String?            @unique @map("wallet_transaction_id")
+  pointTransactionId  String?            @unique @map("point_transaction_id")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  miniApp             MiniApp            @relation(fields: [miniAppId], references: [id], onDelete: Restrict)
+  user                User               @relation("WalletAdjustmentTarget", fields: [userId], references: [id], onDelete: Restrict)
+  walletTransaction   WalletTransaction? @relation(fields: [walletTransactionId], references: [id], onDelete: Restrict)
+  pointTransaction    PointTransaction?  @relation(fields: [pointTransactionId], references: [id], onDelete: Restrict)
+
+  @@unique([miniAppId, idempotencyKey])
+  @@index([miniAppId, userId, createdAt])
+  @@map("wallet_adjustments")
+}
+
 model Announcement {
-  id        String @id @default(cuid())
+  id        String             @id @default(cuid())
   title     String
   body      String
   status    AnnouncementStatus @default(DRAFT)
   audience  Json?
-  startsAt  DateTime? @map("starts_at")
-  endsAt    DateTime? @map("ends_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  startsAt  DateTime?          @map("starts_at")
+  endsAt    DateTime?          @map("ends_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
   @@index([status, startsAt, endsAt])
   @@map("announcements")
 }
 
 model Notification {
-  id        String @id @default(cuid())
-  userId    String @map("user_id")
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
   type      NotificationType @default(SYSTEM)
   title     String
   body      String
   data      Json?
-  readAt    DateTime? @map("read_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, readAt, createdAt])
   @@map("notifications")
 }
 
 model Setting {
-  id          String @id @default(cuid())
-  key         String @unique
+  id          String   @id @default(cuid())
+  key         String   @unique
   value       Json
   description String?
-  isPublic    Boolean @default(false) @map("is_public")
+  isPublic    Boolean  @default(false) @map("is_public")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
   @@map("settings")
 }

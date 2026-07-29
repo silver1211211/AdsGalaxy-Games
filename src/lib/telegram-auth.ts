@@ -7,7 +7,8 @@ const telegramUserSchema = z.object({
   last_name: z.string().max(128).optional(),
   username: z.string().max(64).optional(),
   language_code: z.string().max(10).optional(),
-  photo_url: z.string().url().optional()
+  photo_url: z.string().url().optional(),
+  is_premium: z.boolean().optional()
 });
 
 export type ValidatedTelegramUser = z.infer<typeof telegramUserSchema>;

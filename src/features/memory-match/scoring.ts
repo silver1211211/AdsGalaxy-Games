@@ -1,31 +1,34 @@
 import { getLevel } from "./config";
-import type { CompletionInput, GameResult } from "./types";
 
-export function pointsForMatch(level: number, combo: number, elapsedSeconds: number) {
-  const speedFactor = Math.max(.65, 1.35 - elapsedSeconds / 240);
-  return Math.round((90 + level * 24) * Math.max(1, combo) * speedFactor);
+export type ScoreInput = {
+  level: number;
+  moves: number;
+  mismatches: number;
+  elapsedSeconds: number;
+  highestCombo: number;
+  shuffleCount: number;
+};
+
+export function calculateScore(input: ScoreInput) {
+  const level = getLevel(input.level);
+  const pairs = level.cardCount / 2;
+  const efficiencyPermille = Math.max(350, Math.round((pairs * 1000) / Math.max(pairs, input.moves)));
+  const speedPermille = Math.max(400, Math.round((level.timeTarget * 1000) / Math.max(level.timeTarget, input.elapsedSeconds)));
+  const comboBonus = Math.min(300, input.highestCombo * 30);
+  const shuffleBonus = input.shuffleCount * 40;
+  return Math.round((level.basePoints * (efficiencyPermille + speedPermille + comboBonus + shuffleBonus)) / 2000);
+}
+export function calculateStars(input: ScoreInput): 1 | 2 | 3 {
+  const level = getLevel(input.level);
+  const pairs = level.cardCount / 2;
+  const efficiency = pairs / Math.max(pairs, input.moves);
+  if (input.elapsedSeconds <= level.timeTarget && efficiency >= 0.8) return 3;
+  if (input.elapsedSeconds <= level.goodTimeTarget && efficiency >= 0.58) return 2;
+  return 1;
 }
 
-export function expectedScore(input: Omit<CompletionInput, "score">) {
-  const config = getLevel(input.level);
-  const idealMoves = input.matchedPairs;
-  const efficiency = Math.max(.35, idealMoves / Math.max(idealMoves, input.moves));
-  const speed = Math.max(.35, config.timeTarget / Math.max(config.timeTarget, input.elapsedSeconds));
-  const comboBonus = 1 + Math.min(input.highestCombo, input.matchedPairs) * .045;
-  return Math.round(input.matchedPairs * (110 + input.level * 26) * efficiency * speed * comboBonus);
-}
-
-export function calculateResult(input: CompletionInput): GameResult {
-  const config = getLevel(input.level);
-  const efficiency = input.matchedPairs / Math.max(input.matchedPairs, input.moves);
-  const speedRatio = input.elapsedSeconds / config.timeTarget;
-  const stars: 1 | 2 | 3 = efficiency >= .82 && speedRatio <= 1 ? 3
-    : efficiency >= .58 && speedRatio <= 1.55 ? 2 : 1;
-  const score = expectedScore(input);
-  return {
-    ...input, score, stars,
-    rewardAmount: Math.round(config.baseReward * (.7 + stars * .35) * 100) / 100,
-    experience: Math.round(35 + input.level * 18 + stars * 12 + input.highestCombo * 3),
-    completedAt: new Date().toISOString()
-  };
+/** Multiplier is stored in thousandths. Final points use round-to-nearest integer. */
+export function applyMultiplier(basePoints: number, multiplier: number) {
+  if (![1200, 1300, 1400, 1500].includes(multiplier)) throw new Error("Invalid multiplier");
+  return Math.round((basePoints * multiplier) / 1000);
 }

@@ -1,0 +1,2 @@
+import { AppShell } from "@/components/layout/app-shell";import { ProfilePageShell } from "@/components/profile/profile-page-shell";import { ActivityList } from "@/components/profile/activity-list";
+export default function Page(){return <AppShell><ProfilePageShell title="Account Activity" description="Recent tenant-scoped game, task, wallet, points, profile, and security activity."><ActivityList/></ProfilePageShell></AppShell>}

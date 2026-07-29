@@ -1,0 +1,12 @@
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/session";
+import { assertSameOrigin, rateLimit } from "@/features/profile/security";
+
+const schema=z.object({action:z.enum(["PUBLISH","PAUSE","RESUME","END","ARCHIVE","DUPLICATE"]),confirm:z.literal(true)}).strict();
+export async function PATCH(request:Request,{params}:{params:Promise<{campaignId:string}>}){
+ try{assertSameOrigin(request);const auth=await requireSuperAdmin();rateLimit(`sa-sponsored:${auth.userId}`,12,60_000);const{campaignId}=await params,input=schema.parse(await request.json()),current=await prisma.sponsoredCampaign.findUnique({where:{id:campaignId},include:{tenants:true}});if(!current)return Response.json({error:"Campaign not found."},{status:404});
+ const campaign=await prisma.$transaction(async tx=>{if(input.action==="DUPLICATE"){const copy=await tx.sponsoredCampaign.create({data:{name:`${current.name} copy`,sponsorName:current.sponsorName,title:current.title,description:current.description,imageReference:current.imageReference,buttonText:current.buttonText,destinationUrl:current.destinationUrl,disclosureText:current.disclosureText,backgroundStyle:current.backgroundStyle,placement:current.placement,status:"DRAFT",priority:current.priority,targetingMode:current.targetingMode,startsAt:null,endsAt:null,maxImpressions:current.maxImpressions,maxClicks:current.maxClicks,perUserFrequency:current.perUserFrequency,createdByUserId:auth.userId,updatedByUserId:auth.userId,tenants:{create:current.tenants.map(x=>({miniAppId:x.miniAppId}))}}});await tx.adminAuditLog.create({data:{actorUserId:auth.userId,action:"SPONSORED_CAMPAIGN_DUPLICATED",targetType:"SponsoredCampaign",targetId:copy.id,metadata:{sourceCampaignId:current.id}}});return copy}
+ const status={PUBLISH:"PUBLISHED",PAUSE:"PAUSED",RESUME:"PUBLISHED",END:"ENDED",ARCHIVE:"ARCHIVED"}[input.action];const updated=await tx.sponsoredCampaign.update({where:{id:campaignId},data:{status,updatedByUserId:auth.userId}});await tx.adminAuditLog.create({data:{actorUserId:auth.userId,action:`SPONSORED_CAMPAIGN_${input.action}`,targetType:"SponsoredCampaign",targetId:campaignId,before:{status:current.status},after:{status}}});return updated});return Response.json({campaign});
+ }catch(error){return error instanceof Response?error:Response.json({error:error instanceof z.ZodError?"Invalid campaign action.":"Campaign action failed safely."},{status:422})}
+}

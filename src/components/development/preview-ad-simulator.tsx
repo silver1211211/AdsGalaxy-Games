@@ -1,0 +1,4 @@
+"use client";
+import { useState } from "react";
+const outcomes = ["Completed","No Fill","Timeout","SDK Error","Closed / Cancelled"];
+export function PreviewAdSimulator(){const[outcome,setOutcome]=useState(outcomes[0]),[message,setMessage]=useState("");return <aside className="mt-4 rounded-2xl bg-amber-50 p-3 text-xs font-bold text-amber-900"><p>TEST AD — NO REAL REWARD</p><div className="mt-2 flex flex-wrap gap-2"><select aria-label="Simulated ad outcome" value={outcome} onChange={e=>setOutcome(e.target.value)} className="min-h-11 flex-1 rounded-xl border border-amber-200 bg-white px-3">{outcomes.map(x=><option key={x}>{x}</option>)}</select><button onClick={()=>setMessage(`Simulated: ${outcome}. No provider was called and no reward was created.`)} className="min-h-11 rounded-xl bg-amber-900 px-3 text-white">Run simulation</button></div><p aria-live="polite" className="mt-2 font-medium">{message}</p></aside>}

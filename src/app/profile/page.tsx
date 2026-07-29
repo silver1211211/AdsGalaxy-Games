@@ -1,2 +1,6 @@
-import { ComingSoon } from "@/components/system/coming-soon";
-export default function ProfilePage() { return <ComingSoon title="Profile" />; }
+import { AppShell } from "@/components/layout/app-shell";
+import { ProfileDashboard } from "@/components/profile/profile-dashboard";
+
+export default function ProfilePage() {
+  return <AppShell><ProfileDashboard /></AppShell>;
+}

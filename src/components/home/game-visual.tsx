@@ -1,12 +1,13 @@
-import { BrainCircuit, CircleHelp, MousePointerClick } from "lucide-react";
+import { BrainCircuit, CircleHelp, Map, MousePointerClick } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function GameVisual({ kind }: { kind: "memory" | "quiz" | "tap" }) {
-  const Icon = kind === "memory" ? BrainCircuit : kind === "quiz" ? CircleHelp : MousePointerClick;
+export function GameVisual({ kind }: { kind: "memory" | "quiz" | "tap" | "maze" }) {
+  const Icon = kind === "memory" ? BrainCircuit : kind === "quiz" ? CircleHelp : kind === "maze" ? Map : MousePointerClick;
   const styles = {
     memory: "bg-teal-50 text-teal-600",
     quiz: "bg-coral-50 text-coral-500",
-    tap: "bg-[#f3f0ff] text-[#765ac9]"
+    tap: "bg-[#f3f0ff] text-[#765ac9]",
+    maze: "bg-[#e9f3ff] text-[#315a8a]"
   }[kind];
   return (
     <div className={cn("relative grid h-44 place-items-center overflow-hidden rounded-[1.65rem]", styles)}>

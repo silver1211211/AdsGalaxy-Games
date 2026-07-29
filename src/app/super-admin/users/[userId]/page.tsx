@@ -1,0 +1,15 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { maskedTelegramId } from "@/features/super-admin/policy";
+import { requireSuperAdminPage } from "@/features/super-admin/auth";
+import { UserControls } from "@/components/super-admin/user-controls";
+export default async function UserDetail({params}:{params:Promise<{userId:string}>}){
+  await requireSuperAdminPage();
+  const {userId}=await params,u=await prisma.user.findUnique({where:{id:userId},include:{memberships:{include:{miniApp:true}},wallets:{include:{miniApp:true}},withdrawals:true,appSessions:{include:{miniApp:true},orderBy:{createdAt:"desc"},take:25},superAdminNotesReceived:{include:{author:true},orderBy:{createdAt:"desc"}}}});if(!u)notFound();
+  const available=u.wallets.reduce((s,w)=>s+Number(w.availableBalance),0),holds=u.wallets.reduce((s,w)=>s+Number(w.withdrawalHoldBalance),0);
+  return <div className="grid gap-6"><header><p className="text-xs font-black uppercase tracking-[.18em] text-teal-600">Global user</p><h1 className="mt-1 text-3xl font-black">{u.firstName} {u.lastName}</h1><p className="sa-muted mt-2 text-sm">@{u.username??"no_username"} · Telegram {maskedTelegramId(u.telegramId)} · {u.status}</p></header>
+  <UserControls userId={u.id} status={u.status}/>
+  <section className="grid grid-cols-2 gap-3 md:grid-cols-4">{[["Memberships",u.memberships.length],["Available",`$${available.toFixed(2)}`],["Withdrawal holds",`$${holds.toFixed(2)}`],["Sessions",u.appSessions.length]].map(([l,v])=><article className="sa-card p-4" key={l}><p className="text-xl font-black">{v}</p><p className="sa-muted text-xs">{l}</p></article>)}</section>
+  <section className="sa-card p-5"><h2 className="font-black">Tenant memberships</h2><div className="mt-4 grid gap-3">{u.memberships.map(m=>{const wallet=u.wallets.find(w=>w.miniAppId===m.miniAppId);return <article key={m.id} className="rounded-xl bg-[var(--sa-surface-2)] p-4 text-xs"><strong>{m.miniApp.name}</strong><p className="sa-muted mt-1">{m.role} · {m.status} · Joined {m.createdAt.toLocaleDateString()}</p><p className="mt-2 font-bold">Points {u.totalPoints} · Available ${Number(wallet?.availableBalance??0).toFixed(2)} · Hold ${Number(wallet?.withdrawalHoldBalance??0).toFixed(2)}</p></article>})}</div></section>
+  <section className="grid gap-4 lg:grid-cols-2"><article className="sa-card p-5"><h2 className="font-black">Sessions</h2>{u.appSessions.map(s=><p className="mt-3 text-xs" key={s.id}>{s.miniApp.name} · {s.deviceLabel??s.source} · {s.revokedAt?"Revoked":"Active"} · {s.lastSeenAt.toLocaleString()}</p>)}</article><article className="sa-card p-5"><h2 className="font-black">Private Super Admin notes</h2>{u.superAdminNotesReceived.map(n=><div className="mt-3 rounded-xl bg-[var(--sa-surface-2)] p-3 text-xs" key={n.id}><p>{n.body}</p><p className="sa-muted mt-2">{n.author.username??n.author.firstName} · {n.createdAt.toLocaleString()}</p></div>)}{!u.superAdminNotesReceived.length&&<p className="sa-muted mt-3 text-xs">No private notes.</p>}</article></section></div>
+}

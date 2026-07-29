@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { DatabaseZap } from "lucide-react";
+export function DevelopmentPreviewBanner({role}:{role:string}){return <aside className="mb-5 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-card"><div className="flex gap-3"><DatabaseZap className="shrink-0"/><div><p className="text-xs font-black uppercase tracking-[.15em]">Development Preview Mode</p><p className="mt-1 text-sm">Database persistence, financial rewards, and live Ads Galaxy calls are disabled.</p><p className="mt-2 text-xs font-bold">Role: {role.replace("_"," ")} · All values are temporary.</p><Link className="mt-2 inline-block text-xs font-black underline" href="/dev/access">Database setup</Link></div></div></aside>}

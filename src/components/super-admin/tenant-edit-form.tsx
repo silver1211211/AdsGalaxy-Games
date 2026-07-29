@@ -1,0 +1,9 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+export function TenantEditForm({tenant}:{tenant:{id:string;name:string;slug:string;description:string}}){
+  const router=useRouter(),[name,setName]=useState(tenant.name),[slug,setSlug]=useState(tenant.slug),[description,setDescription]=useState(tenant.description),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+  async function save(){if(busy)return;setBusy(true);const r=await fetch(`/api/super-admin/tenants/${tenant.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"EDIT",name,slug,description:description||null})}),b=await r.json().catch(()=>({}));setBusy(false);setMessage(r.ok?"Tenant details saved.":b.error??"Could not save.");if(r.ok)router.refresh()}
+  return <section className="sa-card p-5"><h2 className="font-black">Tenant identity</h2><div className="mt-4 grid gap-3 sm:grid-cols-2"><Field label="Display name" value={name} onChange={setName}/><Field label="Slug" value={slug} onChange={setSlug}/><label className="text-xs font-bold sm:col-span-2">Description<textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} className="mt-1 w-full rounded-xl border border-[var(--sa-border)] bg-[var(--sa-surface)] p-3"/></label></div><div className="mt-3 flex items-center justify-between gap-3"><p className="text-xs font-bold text-coral-500">{message}</p><button disabled={busy} className="game-primary disabled:opacity-50" onClick={()=>void save()}>{busy?"Saving…":"Save changes"}</button></div></section>
+}
+function Field({label,value,onChange}:{label:string;value:string;onChange(v:string):void}){return <label className="text-xs font-bold">{label}<input value={value} onChange={e=>onChange(e.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-[var(--sa-border)] bg-[var(--sa-surface)] px-3"/></label>}

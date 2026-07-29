@@ -1,190 +1,183 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, BarChart3, CalendarDays, LockKeyhole, Pause, Play, RotateCcw, Settings2, Trophy, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeft, Coins, LoaderCircle, LockKeyhole, Pause, Play, RotateCcw, Shuffle, Trophy, Volume2, VolumeX, WalletCards, X } from "lucide-react";
 import Link from "next/link";
-import { LEVELS, DAILY_CHALLENGE, getLevel } from "./config";
-import { createDeck } from "./engine";
+import { LEVELS, getLevel } from "./config";
 import { GameHud } from "./game-hud";
 import { MemoryCard } from "./memory-card";
-import { pointsForMatch } from "./scoring";
-import { ACHIEVEMENT_LABELS, DEFAULT_STATS, loadStats, recordResult } from "./progress";
 import { playSound } from "./sound";
-import type { GameResult, MemoryCard as Card, MemoryStats } from "./types";
+import type { AttemptView, ClientCard, LevelProgress, PendingClaim } from "./types";
+import { showAdsGalaxy } from "@/lib/ads/adsgalaxy-provider";
 import { cn } from "@/lib/utils";
+import { useTelegram } from "@/components/providers/telegram-provider";
 
-type Feedback = { id: number; text: string; good: boolean };
+type FlipEvent = { type: string; matched?: boolean; shuffled?: boolean; firstIndex?: number; secondIndex?: number; revealed?: Array<{ cardId: string; emoji: string; label: string; kind: ClientCard["kind"]; pairSlot: number }> };
 
 export function MemoryMatchGame() {
+  const { authenticated, ready, refreshDashboard } = useTelegram();
   const [level, setLevel] = useState(1);
-  const [deck, setDeck] = useState<Card[]>([]);
-  const [opened, setOpened] = useState<number[]>([]);
-  const [moves, setMoves] = useState(0);
-  const [matched, setMatched] = useState(0);
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [highestCombo, setHighestCombo] = useState(0);
-  const [seconds, setSeconds] = useState(0);
-  const [started, setStarted] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const [progress, setProgress] = useState<LevelProgress[]>([]);
+  const [attempt, setAttempt] = useState<AttemptView | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [result, setResult] = useState<GameResult | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [stats, setStats] = useState<MemoryStats>(DEFAULT_STATS);
-  const [newAchievements, setNewAchievements] = useState<string[]>([]);
-  const [confirmExit, setConfirmExit] = useState(false);
-  const feedbackId = useRef(0);
-  const config = getLevel(level);
-  const totalPairs = (config.rows * config.columns) / 2;
+  const [pauseOpen, setPauseOpen] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [rewardClaim, setRewardClaim] = useState<PendingClaim | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [shuffleNotice, setShuffleNotice] = useState(false);
+  const [clock, setClock] = useState(0);
+  const mounted = useRef(true);
 
-  useEffect(() => setStats(loadStats()), []);
+  const loadProgress = useCallback(async () => {
+    const response = await fetch("/api/games/memory-match/progress", { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json() as { highestUnlockedLevel: number; levels: LevelProgress[] };
+      setProgress(data.levels);
+      setLevel((current) => Math.min(current, data.highestUnlockedLevel));
+    }
+  }, []);
+  useEffect(() => { mounted.current = true; if (authenticated) void loadProgress(); return () => { mounted.current = false; }; }, [authenticated, loadProgress]);
   useEffect(() => {
-    if (!started || paused || result) return;
-    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    if (!attempt || attempt.status !== "ACTIVE" || rewardClaim || pauseOpen || exitOpen) return;
+    const timer = window.setInterval(() => setClock((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [started, paused, result]);
+  }, [attempt, rewardClaim, pauseOpen, exitOpen]);
 
-  const startGame = useCallback((nextLevel = level) => {
-    setLevel(nextLevel); setDeck(createDeck(nextLevel)); setOpened([]); setMoves(0); setMatched(0);
-    setScore(0); setCombo(0); setHighestCombo(0); setSeconds(0); setResult(null);
-    setNewAchievements([]); setLocked(false); setPaused(false); setStarted(true); setConfirmExit(false);
-  }, [level]);
-
-  const finishGame = useCallback(async (finalMoves: number, finalMatched: number, finalCombo: number, displayScore: number) => {
-    setLocked(true);
-    const payload = { level, moves: finalMoves, elapsedSeconds: Math.max(1, seconds), highestCombo: finalCombo, matchedPairs: finalMatched, score: displayScore };
+  const action = useCallback(async (name: "pause" | "resume" | "restart" | "abandon") => {
+    if (!attempt) return;
+    setBusy(true);
     try {
-      const response = await fetch("/api/games/memory-match/complete", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+      const response = await fetch(`/api/games/memory-match/attempts/${attempt.id}/${name}`, { method: "POST" });
+      if (response.ok) setAttempt((await response.json() as { attempt: AttemptView }).attempt);
+    } finally { setBusy(false); }
+  }, [attempt]);
+
+  useEffect(() => {
+    if (!attempt) return;
+    const background = () => {
+      if (document.hidden && attempt.status === "ACTIVE" && !rewardClaim) void action("pause").then(() => setPauseOpen(true));
+    };
+    document.addEventListener("visibilitychange", background);
+    return () => document.removeEventListener("visibilitychange", background);
+  }, [attempt, rewardClaim, action]);
+
+  async function startGame(nextLevel: number) {
+    setLoading(true); setMessage(null);
+    try {
+      const response = await fetch("/api/games/memory-match/attempts", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ level: nextLevel })
       });
-      if (!response.ok) throw new Error("Completion validation failed");
-      const { result: validated } = await response.json() as { result: GameResult };
-      setResult(validated); setScore(validated.score); playSound("victory", muted);
-      const progress = recordResult(validated);
-      setStats(progress.stats); setNewAchievements(progress.newlyUnlocked);
-      localStorage.setItem("ads-galaxy:memory-match:last-result", JSON.stringify(validated));
-      window.dispatchEvent(new CustomEvent("ads-galaxy:game-complete", { detail: validated }));
-    } catch {
-      setFeedback({ id: ++feedbackId.current, text: "Could not validate this run", good: false });
-      setLocked(false);
-    }
-  }, [level, seconds, muted]);
+      if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? "Could not start");
+      const data = await response.json() as { attempt: AttemptView };
+      setAttempt(data.attempt); setClock(data.attempt.elapsedSeconds); setLevel(nextLevel);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not start level"); }
+    finally { setLoading(false); }
+  }
 
-  const selectCard = (index: number) => {
-    if (!started || paused || locked || opened.includes(index) || deck[index]?.matched) return;
-    playSound("flip", muted);
-    if (opened.length === 0) { setOpened([index]); return; }
-    const firstIndex = opened[0];
-    const first = deck[firstIndex];
-    const second = deck[index];
-    if (!first || !second) return;
-    const nextMoves = moves + 1;
-    setMoves(nextMoves); setOpened([firstIndex, index]); setLocked(true);
-    if (first.id === second.id) {
-      const nextCombo = combo + 1;
-      const gained = pointsForMatch(level, nextCombo, seconds);
-      const nextScore = score + gained;
-      const nextMatched = matched + 1;
-      window.setTimeout(() => {
-        setDeck((cards) => cards.map((card, cardIndex) =>
-          cardIndex === firstIndex || cardIndex === index ? { ...card, matched: true } : card
-        ));
-        setMatched(nextMatched); setCombo(nextCombo); setHighestCombo((value) => Math.max(value, nextCombo));
-        setScore(nextScore); setOpened([]); playSound("match", muted);
-        setFeedback({ id: ++feedbackId.current, text: `+${gained}${nextCombo > 1 ? ` · ${nextCombo}× combo` : ""}`, good: true });
-        if (nextMatched === totalPairs) void finishGame(nextMoves, nextMatched, Math.max(highestCombo, nextCombo), nextScore);
-        else setLocked(false);
-      }, 420);
-    } else {
-      window.setTimeout(() => {
-        setOpened([]); setCombo(0); setLocked(false); playSound("wrong", muted);
-        setFeedback({ id: ++feedbackId.current, text: "Combo reset", good: false });
-      }, 780);
-    }
-  };
+  async function flip(index: number) {
+    if (!attempt || busy || attempt.status !== "ACTIVE") return;
+    setBusy(true); playSound("flip", muted);
+    try {
+      const response = await fetch(`/api/games/memory-match/attempts/${attempt.id}/flip`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ index, version: attempt.version })
+      });
+      if (response.status === 409) {
+        const restored = await fetch(`/api/games/memory-match/attempts/${attempt.id}`).then((item) => item.json()) as { attempt: AttemptView };
+        setAttempt(restored.attempt); return;
+      }
+      if (!response.ok) throw new Error("That card could not be selected");
+      const data = await response.json() as { attempt: AttemptView; event: FlipEvent };
+      if (data.event.revealed && data.event.firstIndex !== undefined && data.event.secondIndex !== undefined) {
+        const transient = data.attempt.cards.map((card) => ({ ...card }));
+        [data.event.firstIndex, data.event.secondIndex].forEach((cardIndex, eventIndex) => {
+          const reveal = data.event.revealed?.[eventIndex];
+          if (reveal) transient[cardIndex] = { ...transient[cardIndex], ...reveal, revealed: true };
+        });
+        setAttempt({ ...data.attempt, cards: transient });
+        await new Promise((resolve) => window.setTimeout(resolve, data.event.matched ? 420 : 780));
+      }
+      if (!mounted.current) return;
+      setAttempt(data.attempt);
+      if (data.event.matched) playSound("match", muted); else if (data.event.type === "MISMATCH") playSound("wrong", muted);
+      if (data.event.shuffled) { setShuffleNotice(true); window.setTimeout(() => setShuffleNotice(false), 1200); }
+      const newestClaim = data.attempt.claims.find((claim) => claim.status === "MATCHED" && !attempt.claims.some((old) => old.id === claim.id));
+      if (newestClaim) setRewardClaim(newestClaim);
+      if (data.attempt.status === "COMPLETED") { playSound("victory", muted); await loadProgress(); await refreshDashboard(); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Selection failed"); }
+    finally { if (mounted.current) setBusy(false); }
+  }
 
-  const gridStyle = useMemo(() => ({ gridTemplateColumns: `repeat(${config.columns}, minmax(0, 1fr))` }), [config.columns]);
-  const compact = config.columns >= 5 || config.rows >= 5;
+  async function claimReward(claim: PendingClaim) {
+    setBusy(true); setMessage(null);
+    try {
+      const requestResponse = await fetch(`/api/reward-claims/${claim.id}/request-ad`, { method: "POST" });
+      if (!requestResponse.ok) throw new Error((await requestResponse.json() as { error?: string }).error ?? "Ad unavailable");
+      const request = await requestResponse.json() as { requestId: string; adsGalaxyMiniAppId: string; environment: string };
+      const outcome = await showAdsGalaxy(request.adsGalaxyMiniAppId);
+      const report = await fetch(`/api/reward-claims/${claim.id}/browser-result`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: request.requestId, outcome: outcome.status, ...(outcome.status === "COMPLETED" ? { providerRequestId: outcome.providerRequestId } : {}) })
+      });
+      const result = await report.json() as { message?: string };
+      setMessage(result.message ?? "Reward claim updated.");
+      const restored = await fetch(`/api/games/memory-match/attempts/${attempt?.id}`).then((item) => item.json()) as { attempt: AttemptView };
+      setAttempt(restored.attempt); setRewardClaim(null);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Ad unavailable");
+      if (attempt?.status === "PAUSED") await action("resume");
+      setRewardClaim(null);
+    } finally { setBusy(false); }
+  }
 
-  if (!started) return <StartScreen level={level} setLevel={setLevel} stats={stats} onStart={() => startGame(level)} muted={muted} setMuted={setMuted} />;
+  if (!ready) return <Centered><LoaderCircle className="animate-spin text-teal-600" size={28} /><p>Preparing Memory Match…</p></Centered>;
+  if (!authenticated) return <Centered><LockKeyhole className="text-teal-600" size={30} /><h1 className="text-2xl font-extrabold">Open in Telegram</h1><p className="max-w-sm text-center text-sm text-warm-600">Secure game attempts require an authenticated Telegram Mini App session.</p><Link href="/games" className="game-primary">Back to games</Link></Centered>;
+  if (!attempt) return <StartScreen level={level} setLevel={setLevel} progress={progress} loading={loading} muted={muted} setMuted={setMuted} onStart={() => void startGame(level)} message={message} />;
 
-  return (
-    <main className="mx-auto min-h-dvh w-full max-w-[940px] px-3 pb-7 pt-3 sm:px-6 sm:pt-6">
-      <div className="mb-3 flex items-center justify-between">
-        <button onClick={() => setConfirmExit(true)} className="game-icon-button" aria-label="Exit game"><ArrowLeft size={19} /></button>
-        <div className="flex gap-2">
-          <button onClick={() => setMuted((value) => !value)} className="game-icon-button" aria-label={muted ? "Unmute" : "Mute"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
-          <button onClick={() => setPaused(true)} className="game-icon-button" aria-label="Pause game"><Pause size={18} /></button>
-        </div>
-      </div>
-      <GameHud level={level} moves={moves} matched={matched} total={totalPairs} score={score} combo={combo} seconds={seconds} />
-      <section className="relative mx-auto mt-3 rounded-[1.8rem] border border-white bg-white/55 p-2.5 shadow-card backdrop-blur sm:mt-5 sm:p-5">
-        <div className={cn("mx-auto grid w-full gap-1.5 sm:gap-2.5", compact ? "max-w-[610px]" : "max-w-[690px]")} style={gridStyle}>
-          {deck.map((card, index) => <MemoryCard key={card.cardId} card={card} compact={compact}
-            revealed={opened.includes(index) || card.matched} disabled={locked && !opened.includes(index)} onSelect={() => selectCard(index)} />)}
-        </div>
-        <AnimatePresence>{feedback && <motion.div key={feedback.id} initial={{ opacity: 0, y: 12, scale: .9 }} animate={{ opacity: 1, y: -8, scale: 1 }} exit={{ opacity: 0, y: -30 }}
-          transition={{ duration: .35 }} onAnimationComplete={() => window.setTimeout(() => setFeedback(null), 500)}
-          className={cn("pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-extrabold text-white shadow-float", feedback.good ? "bg-teal-600" : "bg-coral-500")}>{feedback.text}</motion.div>}</AnimatePresence>
-      </section>
-      <p className="mt-3 text-center text-[10px] font-semibold text-warm-400">Choose two cards · Match pairs · Build your combo</p>
-      <AnimatePresence>
-        {paused && <PauseModal onResume={() => setPaused(false)} onRestart={() => startGame(level)} onExit={() => setConfirmExit(true)} />}
-        {confirmExit && <ConfirmExit onCancel={() => setConfirmExit(false)} />}
-        {result && <VictoryModal result={result} achievements={newAchievements} canContinue={level < LEVELS.length}
-          onReplay={() => startGame(level)} onContinue={() => startGame(Math.min(LEVELS.length, level + 1))} />}
-      </AnimatePresence>
-    </main>
-  );
+  const config = getLevel(attempt.level);
+  const gridStyle = { gridTemplateColumns: `repeat(${config.columns}, minmax(0, 1fr))` };
+  return <main className="mx-auto min-h-dvh w-full max-w-[940px] px-3 pb-7 pt-3 sm:px-6 sm:pt-6">
+    <div className="mb-3 flex items-center justify-between">
+      <button onClick={() => { setPauseOpen(false); setExitOpen(true); void action("pause"); }} className="game-icon-button" aria-label="Exit game"><ArrowLeft size={19} /></button>
+      <div className="flex gap-2"><button onClick={() => setMuted((v) => !v)} className="game-icon-button" aria-label={muted ? "Turn sound on" : "Turn sound off"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
+        <button onClick={() => { setExitOpen(false); setPauseOpen(true); void action("pause"); }} className="game-icon-button" aria-label="Pause game"><Pause size={18} /></button></div>
+    </div>
+    <GameHud level={attempt.level} moves={attempt.moves} matched={attempt.matchedPairs} total={config.cardCount / 2} combo={attempt.currentCombo} seconds={clock} shuffles={attempt.shuffleCount} />
+    {attempt.shuffleWarning && <p className="mx-auto mt-3 w-fit rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold text-amber-700"><Shuffle className="mr-1 inline" size={13} />{attempt.shuffleWarning}</p>}
+    {message && <button onClick={() => setMessage(null)} className="mt-3 w-full rounded-2xl bg-teal-50 p-3 text-left text-xs font-bold text-teal-700">{message}</button>}
+    <section className="relative mx-auto mt-3 rounded-[1.8rem] border border-white bg-white/55 p-2 shadow-card backdrop-blur sm:mt-5 sm:p-5">
+      <motion.div layout className="mx-auto grid w-full max-w-[690px] gap-1.5 sm:gap-2.5" style={gridStyle}>
+        {attempt.cards.map((card, index) => <MemoryCard key={card.cardId} card={card} compact={config.columns >= 5} disabled={busy || attempt.status !== "ACTIVE"} onSelect={() => void flip(index)} />)}
+      </motion.div>
+      <AnimatePresence>{shuffleNotice && <motion.div initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30 grid place-items-center rounded-[inherit] bg-ink/65 text-xl font-extrabold text-white backdrop-blur"><Shuffle className="mr-2 inline" />Board Shuffle!</motion.div>}</AnimatePresence>
+    </section>
+    <PendingClaims claims={attempt.claims} onRetry={setRewardClaim} />
+    <AnimatePresence>
+      {rewardClaim && <RewardModal claim={rewardClaim} busy={busy} onClaim={() => void claimReward(rewardClaim)} onLater={() => { setRewardClaim(null); void action("resume"); }} />}
+      {pauseOpen && <PauseModal claims={attempt.claims} busy={busy} onResume={() => { setPauseOpen(false); void action("resume"); }} onRestart={() => { setPauseOpen(false); void action("restart"); }} onExit={() => { setPauseOpen(false); setExitOpen(true); }} />}
+      {exitOpen && <ExitModal busy={busy} onCancel={() => { setExitOpen(false); void action("resume"); }} onExit={() => void action("abandon")} />}
+      {attempt.status === "COMPLETED" && !rewardClaim && <ResultModal attempt={attempt} onReplay={() => { setAttempt(null); void startGame(attempt.level); }} onContinue={() => { setAttempt(null); void startGame(Math.min(15, attempt.level + 1)); }} />}
+    </AnimatePresence>
+  </main>;
 }
 
-function StartScreen({ level, setLevel, stats, onStart, muted, setMuted }: {
-  level: number; setLevel(value: number): void; stats: MemoryStats; onStart(): void; muted: boolean; setMuted(value: boolean): void;
-}) {
-  return (
-    <main className="mx-auto min-h-dvh w-full max-w-[900px] px-4 pb-10 pt-5 sm:px-7 sm:pt-9">
-      <div className="flex items-center justify-between"><Link href="/games" className="game-icon-button" aria-label="Back to games"><ArrowLeft size={19} /></Link><button onClick={() => setMuted(!muted)} className="game-icon-button">{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button></div>
-      <section className="mt-5 overflow-hidden rounded-4xl bg-ink p-6 text-white shadow-float sm:p-9">
-        <div className="flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-3xl bg-teal-500 text-3xl">🧠</div><div><p className="text-xs font-extrabold uppercase tracking-[.18em] text-teal-100">Focus · Match · Win</p><h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Memory Match</h1></div></div>
-        <p className="mt-5 max-w-xl text-sm leading-6 text-white/65">Train your memory, chain perfect matches, and master increasingly challenging boards.</p>
-      </section>
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1.4fr_.8fr]">
-        <section className="rounded-4xl bg-white p-5 shadow-card sm:p-6">
-          <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.16em] text-teal-600">Select challenge</p><h2 className="mt-1 text-xl font-extrabold">Choose a level</h2></div><Settings2 className="text-warm-400" size={20} /></div>
-          <div className="grid grid-cols-5 gap-2">{LEVELS.map((item) => {
-            const unlocked = item.level <= stats.highestUnlockedLevel;
-            return <button key={item.level} disabled={!unlocked} onClick={() => setLevel(item.level)}
-              className={cn("relative min-h-16 rounded-2xl border text-sm font-extrabold transition active:scale-95",
-                level === item.level ? "border-teal-500 bg-teal-50 text-teal-700" : "border-warm-100 bg-warm-50 text-warm-600",
-                !unlocked && "opacity-45")}>{unlocked ? item.level : <LockKeyhole className="mx-auto" size={16} />}<span className="block text-[9px] font-semibold">{item.rows}×{item.columns}</span></button>;
-          })}</div>
-          <button onClick={onStart} className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-teal-600 text-sm font-extrabold text-white shadow-float transition hover:bg-teal-700 active:scale-[.98]"><Play size={18} fill="currentColor" />Start level {level}</button>
-        </section>
-        <div className="grid gap-4">
-          <section className="rounded-3xl border border-coral-400/15 bg-coral-50 p-5"><p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-coral-500"><CalendarDays size={15} />Daily challenge</p><h3 className="mt-2 font-extrabold">{DAILY_CHALLENGE.title}</h3><p className="mt-1 text-xs leading-5 text-warm-600">{DAILY_CHALLENGE.description}</p></section>
-          <section className="grid grid-cols-3 gap-2 rounded-3xl bg-white p-4 shadow-card">
-            {[["Wins", stats.gamesWon], ["Best", stats.highestScore.toLocaleString()], ["Combo", `${stats.bestCombo}×`]].map(([label, value]) => <div key={label} className="text-center"><p className="text-sm font-extrabold">{value}</p><p className="text-[9px] font-bold uppercase text-warm-400">{label}</p></div>)}
-          </section>
-        </div>
-      </div>
-    </main>
-  );
+function Centered({ children }: { children: React.ReactNode }) { return <main className="grid min-h-dvh place-items-center p-5"><div className="grid justify-items-center gap-4 rounded-4xl bg-white p-8 shadow-card">{children}</div></main>; }
+function StartScreen({ level, setLevel, progress, loading, muted, setMuted, onStart, message }: { level: number; setLevel(v: number): void; progress: LevelProgress[]; loading: boolean; muted: boolean; setMuted(v: boolean): void; onStart(): void; message: string | null }) {
+  const unlocked = Math.max(1, progress.filter((item) => item.completed).reduce((max, item) => Math.max(max, item.level + 1), 1));
+  return <main className="mx-auto min-h-dvh w-full max-w-[900px] px-4 pb-10 pt-5 sm:px-7 sm:pt-9">
+    <div className="flex justify-between"><Link href="/games" className="game-icon-button" aria-label="Back to games"><ArrowLeft size={19} /></Link><button onClick={() => setMuted(!muted)} className="game-icon-button" aria-label={muted ? "Turn sound on" : "Turn sound off"}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button></div>
+    <section className="mt-5 rounded-4xl bg-ink p-6 text-white shadow-float sm:p-9"><p className="text-xs font-extrabold uppercase tracking-[.18em] text-teal-200">Focus · Match · Master</p><h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Memory Match</h1><p className="mt-3 text-sm text-white/60">Fifteen balanced levels, controlled board shuffles, and optional sponsored reward moments.</p></section>
+    {message && <p className="mt-4 rounded-2xl bg-coral-50 p-3 text-sm font-bold text-coral-600">{message}</p>}
+    <section className="mt-5 rounded-4xl bg-white p-5 shadow-card sm:p-6"><div className="mb-4"><p className="text-xs font-extrabold uppercase text-teal-600">Select challenge</p><h2 className="text-xl font-extrabold">Choose a level</h2></div>
+      <div className="grid grid-cols-5 gap-2 sm:grid-cols-8">{LEVELS.map((item) => { const p = progress.find((row) => row.level === item.level); const open = item.level <= Math.min(15, unlocked); return <button key={item.level} disabled={!open || loading} onClick={() => setLevel(item.level)} className={cn("min-h-16 rounded-2xl border text-sm font-extrabold", level === item.level ? "border-teal-500 bg-teal-50 text-teal-700" : "border-warm-100 bg-warm-50", !open && "opacity-45")}>{open ? item.level : <LockKeyhole className="mx-auto" size={15} />}<span className="block text-[9px] font-semibold">{item.cardCount} cards</span>{p?.completed && <span className="block text-[8px] text-[#c78a17]">{"★".repeat(p.bestStars)}</span>}</button>; })}</div>
+      <button disabled={loading} onClick={onStart} className="game-primary mt-5 w-full">{loading ? <LoaderCircle className="animate-spin" size={18} /> : <Play size={18} />} {loading ? "Creating secure attempt…" : `Start level ${level}`}</button>
+    </section>
+  </main>;
 }
-
-function Modal({ children }: { children: React.ReactNode }) {
-  return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] grid place-items-center bg-ink/65 p-4 backdrop-blur-md"><motion.div initial={{ y: 24, scale: .96 }} animate={{ y: 0, scale: 1 }} className="w-full max-w-md rounded-4xl bg-white p-6 shadow-float">{children}</motion.div></motion.div>;
-}
-function PauseModal({ onResume, onRestart, onExit }: { onResume(): void; onRestart(): void; onExit(): void }) {
-  return <Modal><Pause className="mx-auto text-teal-600" size={34} /><h2 className="mt-4 text-center text-2xl font-extrabold">Game paused</h2><div className="mt-6 grid gap-2"><button onClick={onResume} className="game-primary"><Play size={17} />Resume</button><button onClick={onRestart} className="game-secondary"><RotateCcw size={17} />Restart</button><button onClick={onExit} className="game-secondary text-coral-500"><X size={17} />Exit game</button></div></Modal>;
-}
-function ConfirmExit({ onCancel }: { onCancel(): void }) {
-  return <Modal><h2 className="text-center text-2xl font-extrabold">Leave this game?</h2><p className="mt-2 text-center text-sm text-warm-600">This run won&apos;t be saved.</p><div className="mt-6 grid grid-cols-2 gap-2"><button onClick={onCancel} className="game-secondary">Keep playing</button><Link href="/games" className="game-primary">Exit</Link></div></Modal>;
-}
-function VictoryModal({ result, achievements, canContinue, onReplay, onContinue }: { result: GameResult; achievements: string[]; canContinue: boolean; onReplay(): void; onContinue(): void }) {
-  return <Modal><div className="memory-confetti" aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ "--i": i } as React.CSSProperties} />)}</div><Trophy className="mx-auto text-[#d99b21]" size={42} /><p className="mt-3 text-center text-3xl tracking-[.15em]">{Array.from({ length: 3 }, (_, i) => <span key={i} className={i < result.stars ? "" : "grayscale opacity-20"}>⭐</span>)}</p><h2 className="mt-2 text-center text-2xl font-extrabold">{result.stars === 3 ? "Perfect!" : result.stars === 2 ? "Great run!" : "Level complete!"}</h2>
-    <div className="mt-5 grid grid-cols-3 gap-2">{[["Score", result.score.toLocaleString()], ["XP", `+${result.experience}`], ["Reward", `+${result.rewardAmount}`], ["Time", `${result.elapsedSeconds}s`], ["Moves", result.moves], ["Best combo", `${result.highestCombo}×`]].map(([label, value]) => <div key={label} className="rounded-2xl bg-warm-50 p-2.5 text-center"><p className="text-sm font-extrabold">{value}</p><p className="text-[9px] font-bold uppercase text-warm-400">{label}</p></div>)}</div>
-    {achievements.length > 0 && <div className="mt-4 rounded-2xl bg-teal-50 p-3 text-center text-xs font-bold text-teal-700"><Trophy className="mr-1 inline" size={14} />Achievement unlocked: {achievements.map((id) => ACHIEVEMENT_LABELS[id]).join(", ")}</div>}
-    <div className="mt-5 grid grid-cols-2 gap-2"><button onClick={onReplay} className="game-secondary"><RotateCcw size={16} />Replay</button>{canContinue ? <button onClick={onContinue} className="game-primary"><Play size={16} />Continue</button> : <Link href="/games" className="game-primary">Finish</Link>}</div></Modal>;
-}
+function Modal({ children }: { children: React.ReactNode }) { return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] grid place-items-center bg-ink/65 p-4 backdrop-blur-md"><motion.div initial={{ y: 20, scale: .97 }} animate={{ y: 0, scale: 1 }} className="relative w-full max-w-md rounded-4xl bg-white p-6 shadow-float">{children}</motion.div></motion.div>; }
+function RewardModal({ claim, busy, onClaim, onLater }: { claim: PendingClaim; busy: boolean; onClaim(): void; onLater(): void }) { const money = claim.rewardType === "MONEY"; return <Modal>{money ? <WalletCards className="mx-auto text-teal-600" size={38} /> : <Coins className="mx-auto text-[#c78a17]" size={38} />}<h2 className="mt-4 text-center text-2xl font-extrabold">{money ? "Money Match Found" : "Coin Match Found"}</h2><p className="mt-2 text-center text-sm text-warm-600">{money ? `Watch the sponsored ad to claim the configured $${claim.configuredMoneyAmount} wallet reward.` : "Watch the sponsored ad to unlock a server-issued point multiplier."}</p><p className="mt-3 rounded-2xl bg-warm-50 p-3 text-center text-[11px] text-warm-500">Production rewards remain pending until provider verification.</p><div className="mt-5 grid gap-2"><button disabled={busy} onClick={onClaim} className="game-primary">{busy ? <LoaderCircle className="animate-spin" size={16} /> : <Play size={16} />}Watch Ad & Claim</button><button disabled={busy} onClick={onLater} className="game-secondary">Continue and claim later</button></div></Modal>; }
+function PendingClaims({ claims, onRetry }: { claims: PendingClaim[]; onRetry(c: PendingClaim): void }) { const pending = claims.filter((claim) => !["CREDITED", "EXPIRED", "ALREADY_CLAIMED"].includes(claim.status)); if (!pending.length) return null; return <aside className="mt-3 rounded-3xl bg-white p-3 shadow-card"><p className="text-[10px] font-extrabold uppercase text-warm-400">Saved reward claims</p><div className="mt-2 flex flex-wrap gap-2">{pending.map((claim) => <button key={claim.id} onClick={() => onRetry(claim)} className="rounded-full bg-teal-50 px-3 py-2 text-xs font-bold text-teal-700">{claim.rewardType === "MONEY" ? "Money reward" : "Coin multiplier"} · {claim.status.replaceAll("_", " ")}</button>)}</div></aside>; }
+function PauseModal({ claims, busy, onResume, onRestart, onExit }: { claims: PendingClaim[]; busy: boolean; onResume(): void; onRestart(): void; onExit(): void }) { return <Modal><Pause className="mx-auto text-teal-600" size={34} /><h2 className="mt-4 text-center text-2xl font-extrabold">Game paused</h2><p className="mt-2 text-center text-xs text-warm-500">{claims.length} saved reward claim{claims.length === 1 ? "" : "s"}</p><div className="mt-6 grid gap-2"><button disabled={busy} onClick={onResume} className="game-primary"><Play size={17} />Resume</button><button disabled={busy} onClick={onRestart} className="game-secondary"><RotateCcw size={17} />Restart same board</button><button disabled={busy} onClick={onExit} className="game-secondary text-coral-500"><X size={17} />Exit game</button></div></Modal>; }
+function ExitModal({ busy, onCancel, onExit }: { busy: boolean; onCancel(): void; onExit(): void }) { return <Modal><h2 className="text-center text-2xl font-extrabold">Leave this game?</h2><p className="mt-2 text-center text-sm text-warm-600">Your server attempt will be marked abandoned.</p><div className="mt-6 grid grid-cols-2 gap-2"><button disabled={busy} onClick={onCancel} className="game-secondary">Keep playing</button><Link onClick={onExit} href="/games" className="game-primary">Exit</Link></div></Modal>; }
+function ResultModal({ attempt, onReplay, onContinue }: { attempt: AttemptView; onReplay(): void; onContinue(): void }) { return <Modal><Trophy className="mx-auto text-[#d99b21]" size={42} /><p className="mt-3 text-center text-3xl">{"⭐".repeat(attempt.stars ?? 1)}</p><h2 className="mt-2 text-center text-2xl font-extrabold">{attempt.level === 15 ? "Memory Match mastered!" : "Level complete!"}</h2><div className="mt-5 grid grid-cols-2 gap-2">{[["Score", attempt.finalPoints], ["Points earned", attempt.finalPoints], ["Best combo", `${attempt.highestCombo}×`], ["Moves", attempt.moves]].map(([label, value]) => <div key={label} className="rounded-2xl bg-warm-50 p-3 text-center"><p className="font-extrabold">{value}</p><p className="text-[9px] font-bold uppercase text-warm-400">{label}</p></div>)}</div><div className="mt-5 grid grid-cols-2 gap-2"><button onClick={onReplay} className="game-secondary"><RotateCcw size={16} />Replay</button>{attempt.level < 15 ? <button onClick={onContinue} className="game-primary"><Play size={16} />Continue</button> : <Link href="/games" className="game-primary">Back to Games</Link>}</div></Modal>; }
