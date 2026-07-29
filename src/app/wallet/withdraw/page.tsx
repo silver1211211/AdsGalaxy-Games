@@ -1,8 +1,8 @@
 import { WithdrawalForm } from "@/components/wallet/withdrawal-form";
-import { requireSession } from "@/lib/session";
+import { requireWalletPage } from "@/lib/page-auth";
 
 export default async function Page() {
-  await requireSession();
+  await requireWalletPage();
   return (
     <main>
       <p className="text-xs font-black uppercase tracking-wider text-teal-600">

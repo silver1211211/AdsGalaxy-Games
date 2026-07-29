@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/session";
 import {
   REQUEST_DEVICE_COOKIE,
   REQUEST_DEVICE_MAX_AGE,
@@ -10,9 +9,6 @@ import {
 const schema = z.object({ recoveryIdentifier: z.string().uuid().optional() }).strict();
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session || session.source === "DEVELOPMENT")
-    return NextResponse.json({ error: "Telegram authentication required" }, { status: 401 });
   const input = schema.parse(await request.json());
   const identifier = validDeviceIdentifier(input.recoveryIdentifier)
     ? input.recoveryIdentifier!

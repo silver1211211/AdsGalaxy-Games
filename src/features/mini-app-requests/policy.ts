@@ -17,6 +17,8 @@ export function safeContactUrl(value: string) {
 }
 const url = z.string().trim().max(500).refine((value) => Boolean(safeContactUrl(value)), "Use a safe HTTPS or Telegram link");
 export const requestSchema = z.object({
+  applicantName: z.string().trim().min(2).max(160),
+  telegramUsername: z.string().trim().max(64).regex(/^@?[A-Za-z0-9_]{5,64}$/).optional().or(z.literal("")),
   proposedName: z.string().trim().min(3).max(100),
   requestedSlug: z.string().trim().min(5).max(40),
   description: z.string().trim().min(30).max(500),
@@ -33,5 +35,5 @@ export const requestSchema = z.object({
   idempotencyKey: z.string().uuid(),
 }).strict();
 export function publicReference() {
-  return `MAR-${crypto.randomUUID().replaceAll("-", "").slice(0, 6).toUpperCase()}`;
+  return `MAR-${crypto.randomUUID().replaceAll("-", "").slice(0, 16).toUpperCase()}`;
 }

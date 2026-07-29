@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { middlewareExcluded } from "./middleware";
+import { isGenericAdminPath, middlewareExcluded } from "./middleware";
 
 describe("development auth middleware exclusions", () => {
   it("excludes authentication, access, manifest, internals, and assets", () => {
@@ -15,5 +15,11 @@ describe("development auth middleware exclusions", () => {
   it("does not exclude protected game routes", () => {
     expect(middlewareExcluded("/games")).toBe(false);
     expect(middlewareExcluded("/games/tap-collector")).toBe(false);
+  });
+
+  it("routes every legacy generic Admin path home", () => {
+    expect(isGenericAdminPath("/admin")).toBe(true);
+    expect(isGenericAdminPath("/admin/wallet")).toBe(true);
+    expect(isGenericAdminPath("/tenant/admin")).toBe(false);
   });
 });

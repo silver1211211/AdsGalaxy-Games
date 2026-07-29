@@ -1,6 +1,8 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { WalletView } from "@/components/wallet/wallet-view";
-export default function WalletPage() {
+import { requireWalletPage } from "@/lib/page-auth";
+export default async function WalletPage() {
+  await requireWalletPage();
   return (
     <AppShell>
       <main>

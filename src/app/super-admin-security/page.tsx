@@ -1,19 +1,10 @@
 import { redirect } from "next/navigation";
 import { ChangeAdministratorPasswordForm } from "@/components/admin/change-administrator-password-form";
 import { getAdminElevation } from "@/features/admin-security/elevation";
-import { requireSuperAdminIdentity } from "@/lib/session";
+import { requireSuperAdminPageIdentity } from "@/lib/page-auth";
 
 export default async function SuperAdminSecurity() {
-  let auth;
-  try {
-    auth = await requireSuperAdminIdentity();
-  } catch {
-    redirect(
-      process.env.NODE_ENV === "development"
-        ? "/dev/access?next=/super-admin-security"
-        : "/",
-    );
-  }
+  const auth = await requireSuperAdminPageIdentity();
   const elevation = await getAdminElevation({
     userId: auth.userId,
     scopeType: "SUPER_ADMIN",

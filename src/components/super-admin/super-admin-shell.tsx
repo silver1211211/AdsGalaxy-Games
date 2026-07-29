@@ -35,8 +35,12 @@ export function SuperAdminShell({ children, initialTheme, accountName }: {
     router.refresh();
   }
   async function logout() {
-    await fetch("/api/profile/logout", { method: "POST" });
-    location.assign("/dev/access?next=/super-admin");
+    await fetch("/api/super-admin/browser-logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    location.assign("/super-admin-login");
   }
   const helpKey=pathname.startsWith("/super-admin/tenants")?"tenants":pathname.startsWith("/super-admin/administrators")?"administrators":pathname.startsWith("/super-admin/users")?"users":pathname.startsWith("/super-admin/games")?"games":pathname.startsWith("/super-admin/sponsored-content")?"sponsored":pathname.startsWith("/super-admin/finance")?"finance":pathname.startsWith("/super-admin/integrations")?"integrations":pathname.startsWith("/super-admin/settings")?"settings":"overview";
   const pageHelp=SUPER_ADMIN_HELP[helpKey as keyof typeof SUPER_ADMIN_HELP] as HelpContent;

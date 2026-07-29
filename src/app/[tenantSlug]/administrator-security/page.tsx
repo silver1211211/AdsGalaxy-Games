@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { ChangeAdministratorPasswordForm } from "@/components/admin/change-administrator-password-form";
 import { getAdminElevation } from "@/features/admin-security/elevation";
-import { requireTenantAdminIdentity } from "@/features/tenant-admin/auth";
+import { requireTenantAdminPageIdentity } from "@/features/tenant-admin/auth";
 
 export default async function TenantAdministratorSecurity({
   params,
@@ -9,16 +9,7 @@ export default async function TenantAdministratorSecurity({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  let auth;
-  try {
-    auth = await requireTenantAdminIdentity(tenantSlug);
-  } catch {
-    redirect(
-      process.env.NODE_ENV === "development"
-        ? `/dev/access?next=/${tenantSlug}/administrator-security`
-        : "/",
-    );
-  }
+  const auth = await requireTenantAdminPageIdentity(tenantSlug);
   const elevation = await getAdminElevation({
     userId: auth.userId,
     scopeType: "TENANT_ADMIN",

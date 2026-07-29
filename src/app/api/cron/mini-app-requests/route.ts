@@ -8,7 +8,7 @@ export async function GET(request:Request){
     for(const item of items){
       await tx.miniAppRequest.update({where:{id:item.id},data:{status:"EXPIRED",publicStatusMessage:"This request expired before review was completed.",events:{create:{previousStatus:item.status,nextStatus:"EXPIRED",publicMessage:"Request expired"}}}});
       await tx.miniAppSlugReservation.update({where:{requestId:item.id},data:{status:"RELEASE_SCHEDULED",releaseAt}});
-      await tx.notification.create({data:{userId:item.applicantUserId,title:"Mini App request expired",body:`${item.publicReference} has expired.`,data:{publicReference:item.publicReference}}});
+      if(item.applicantUserId)await tx.notification.create({data:{userId:item.applicantUserId,title:"Mini App request expired",body:`${item.publicReference} has expired.`,data:{publicReference:item.publicReference}}});
     }
     await tx.miniAppSlugReservation.updateMany({where:{status:"RELEASE_SCHEDULED",releaseAt:{lte:now}},data:{status:"RELEASED"}});
     return items.length;

@@ -20,6 +20,10 @@ export function middlewareExcluded(pathname: string) {
   );
 }
 
+export function isGenericAdminPath(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 async function hasValidSignedSession(request: NextRequest) {
   const token = request.cookies.get(APPLICATION_SESSION_COOKIE_NAME)?.value;
   const secret = process.env.APP_SESSION_SECRET;
@@ -92,7 +96,7 @@ export async function middleware(request: NextRequest) {
     }
     return NextResponse.next();
   }
-  if (request.nextUrl.pathname === "/admin") {
+  if (isGenericAdminPath(request.nextUrl.pathname)) {
     const home = request.nextUrl.clone();
     home.pathname = "/";
     home.search = "";

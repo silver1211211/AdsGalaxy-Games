@@ -2,7 +2,7 @@ import { Prisma, type MiniAppRequestStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { provisionTenant } from "@/features/super-admin/tenant-provisioning";
 import { normalizeRequestSlug, publicReference, requestSchema, validRequestSlug } from "./policy";
-import { requestBlocksAnother } from "./device";
+import { createStatusAccessToken, hashStatusAccessToken, requestBlocksAnother } from "./device";
 
 export async function slugAvailability(raw: string, currentRequestId?: string) {
   const slug = normalizeRequestSlug(raw);
@@ -22,27 +22,33 @@ export async function slugAvailability(raw: string, currentRequestId?: string) {
   return { slug, status: "AVAILABLE" as const, available: true };
 }
 
-export async function submitMiniAppRequest(userId: string, deviceIdentifierHash: string, raw: unknown) {
+export async function submitMiniAppRequest(userId: string | null, deviceIdentifierHash: string, raw: unknown) {
   const input = requestSchema.parse(raw), slug = normalizeRequestSlug(input.requestedSlug);
+  const statusAccessToken = createStatusAccessToken();
   if (slug !== input.requestedSlug || !validRequestSlug(slug)) throw new Error("INVALID_SLUG");
   return prisma.$transaction(async (tx) => {
     const existingByKey = await tx.miniAppRequest.findUnique({ where: { idempotencyKey: input.idempotencyKey }, include: { reservation: true } });
     if (existingByKey) {
-      if (existingByKey.applicantUserId !== userId) throw new Error("IDEMPOTENCY_CONFLICT");
-      return existingByKey;
+      if (existingByKey.applicantUserId !== userId || existingByKey.deviceIdentifierHash !== deviceIdentifierHash) throw new Error("IDEMPOTENCY_CONFLICT");
+      return { request: existingByKey, statusAccessToken: null };
     }
-    const user = await tx.user.findUnique({ where: { id: userId } });
-    if (!user || user.status !== "ACTIVE") throw new Error("APPLICANT_UNAVAILABLE");
-    const conflicts = await tx.miniAppRequest.findMany({ where: { OR: [{ applicantUserId: userId }, { deviceIdentifierHash }] }, select: { status: true, createdMiniApp: { select: { status: true } } } });
+    const user = userId ? await tx.user.findUnique({ where: { id: userId } }) : null;
+    if (userId && (!user || user.status !== "ACTIVE")) throw new Error("APPLICANT_UNAVAILABLE");
+    const ownership = [...(userId ? [{ applicantUserId: userId }] : []), { deviceIdentifierHash }];
+    const conflicts = await tx.miniAppRequest.findMany({ where: { OR: ownership }, select: { status: true, createdMiniApp: { select: { status: true } } } });
     if (conflicts.some((item) => requestBlocksAnother(item.status, item.createdMiniApp?.status))) {
-      const override = await tx.miniAppRequestSubmissionOverride.findFirst({ where: { consumedAt: null, expiresAt: { gt: new Date() }, OR: [{ userId }, { deviceIdentifierHash }] }, orderBy: { createdAt: "desc" } });
+      const override = await tx.miniAppRequestSubmissionOverride.findFirst({ where: { consumedAt: null, expiresAt: { gt: new Date() }, OR: [...(userId ? [{ userId }] : []), { deviceIdentifierHash }] }, orderBy: { createdAt: "desc" } });
       if (!override) throw new Error("ACTIVE_REQUEST_EXISTS");
       await tx.miniAppRequestSubmissionOverride.update({ where: { id: override.id }, data: { consumedAt: new Date() } });
-      await tx.adminAuditLog.create({ data: { actorUserId: userId, action: "MINI_APP_REQUEST_OVERRIDE_CONSUMED", targetType: "MiniAppRequestSubmissionOverride", targetId: override.id, metadata: { userMatched: override.userId === userId, deviceMatched: override.deviceIdentifierHash === deviceIdentifierHash } } });
+      await tx.adminAuditLog.create({ data: { actorUserId: userId ?? undefined, action: "MINI_APP_REQUEST_OVERRIDE_CONSUMED", targetType: "MiniAppRequestSubmissionOverride", targetId: override.id, metadata: { userMatched: override.userId === userId, deviceMatched: override.deviceIdentifierHash === deviceIdentifierHash } } });
     }
     if (await tx.miniApp.count({ where: { slug } })) throw new Error("SLUG_UNAVAILABLE");
     const request = await tx.miniAppRequest.create({ data: {
-      publicReference: publicReference(), applicantUserId: userId, proposedName: input.proposedName, requestedSlug: slug,
+      publicReference: publicReference(), applicantUserId: userId,
+      applicantName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : input.applicantName,
+      telegramUsername: user?.username ?? (input.telegramUsername ? input.telegramUsername.replace(/^@/, "") : null),
+      requestOrigin: user ? "TELEGRAM" : "WEB", statusAccessTokenHash: hashStatusAccessToken(statusAccessToken),
+      proposedName: input.proposedName, requestedSlug: slug,
       description: input.description, intendedAudience: input.intendedAudience, category: input.category, contactMethod: input.contactMethod,
       primaryPromotionChannel: input.primaryPromotionChannel, primaryPromotionUrl: input.primaryPromotionUrl,
       estimatedAudienceSize: input.estimatedAudienceSize, expectedFirstWeekUsers: input.expectedFirstWeekUsers,
@@ -52,27 +58,34 @@ export async function submitMiniAppRequest(userId: string, deviceIdentifierHash:
       events: { create: { nextStatus: "SUBMITTED", actorUserId: userId, publicMessage: "Request submitted" } },
     }, include: { reservation: true } });
     await Promise.all([
-      tx.notification.create({ data: { userId, title: "Mini App request submitted", body: `${request.publicReference} is waiting for platform review.`, data: { publicReference: request.publicReference } } }),
-      tx.adminAuditLog.create({ data: { actorUserId: userId, action: "MINI_APP_REQUEST_SUBMITTED", targetType: "MiniAppRequest", targetId: request.id, after: { publicReference: request.publicReference, slug } } }),
+      tx.adminAuditLog.create({ data: { actorUserId: userId ?? undefined, action: "MINI_APP_REQUEST_SUBMITTED", targetType: "MiniAppRequest", targetId: request.id, after: { publicReference: request.publicReference, slug } } }),
+      ...(userId ? [tx.notification.create({ data: { userId, title: "Mini App request submitted", body: `${request.publicReference} is waiting for platform review.`, data: { publicReference: request.publicReference } } })] : []),
     ]);
     const reviewers = await tx.miniAppMembership.findMany({ where: { role: "SUPER_ADMIN", status: "ACTIVE" }, select: { userId: true }, distinct: ["userId"] });
     if (reviewers.length) await tx.notification.createMany({ data: reviewers.map((reviewer) => ({ userId: reviewer.userId, title: "New Mini App request", body: `${request.publicReference}: ${request.proposedName}`, data: { requestId: request.id } })) });
-    return request;
+    return { request, statusAccessToken };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
-export async function applicantRequest(userId: string, reference: string) {
-  const request = await prisma.miniAppRequest.findFirst({ where: { publicReference: reference, applicantUserId: userId },
+export async function applicantRequest(input: { userId?: string | null; reference: string; deviceIdentifierHash?: string; statusAccessTokenHash?: string }) {
+  const request = await prisma.miniAppRequest.findFirst({ where: {
+    publicReference: input.reference,
+    OR: [
+      ...(input.userId ? [{ applicantUserId: input.userId }] : []),
+      ...(input.deviceIdentifierHash && input.statusAccessTokenHash ? [{ deviceIdentifierHash: input.deviceIdentifierHash, statusAccessTokenHash: input.statusAccessTokenHash }] : []),
+    ],
+  },
     include: { createdMiniApp: true, messages: { where: { visibility: "PUBLIC" }, orderBy: { createdAt: "asc" } }, events: { orderBy: { createdAt: "asc" } } } });
   if (!request) return null;
-  const [credential, membership] = request.createdMiniAppId ? await Promise.all([
-    prisma.adminCredential.findUnique({ where: { userId_scopeType: { userId, scopeType: "TENANT_ADMIN" } }, select: {
+  const [credential, membership] = request.createdMiniAppId && input.userId ? await Promise.all([
+    prisma.adminCredential.findUnique({ where: { userId_scopeType: { userId: input.userId, scopeType: "TENANT_ADMIN" } }, select: {
       temporaryPassword: true, mustChangePassword: true, passwordChangedAt: true,
     } }),
-    prisma.miniAppMembership.findUnique({ where: { miniAppId_userId: { miniAppId: request.createdMiniAppId, userId } }, select: { role: true, status: true } }),
+    prisma.miniAppMembership.findUnique({ where: { miniAppId_userId: { miniAppId: request.createdMiniAppId, userId: input.userId } }, select: { role: true, status: true } }),
   ]) : [null, null];
+  const { deviceIdentifierHash: _deviceIdentifierHash, statusAccessTokenHash: _statusAccessTokenHash, ...safeRequest } = request;
   return {
-    ...request,
+    ...safeRequest,
     adminAccess: {
       eligible: request.status === "APPROVED" && membership?.role === "ADMIN" && membership.status === "ACTIVE",
       credentialConfigured: Boolean(credential),
@@ -115,9 +128,9 @@ export async function transitionRequest(input: {
     } });
     if (status === "REJECTED" || status === "CANCELED") await tx.miniAppSlugReservation.update({ where: { requestId: current.id },
       data: { status: "RELEASE_SCHEDULED", releaseAt: new Date(now.getTime() + 7 * 86_400_000) } });
+    if (current.applicantUserId) await tx.notification.create({ data: { userId: current.applicantUserId, title: status === "INFORMATION_REQUIRED" ? "More information needed" : status === "REJECTED" ? "Mini App request decision" : "Mini App request updated",
+      body: input.publicMessage ?? `Your request is now ${status.toLowerCase().replaceAll("_", " ")}.`, data: { publicReference: current.publicReference } } });
     await Promise.all([
-      tx.notification.create({ data: { userId: current.applicantUserId, title: status === "INFORMATION_REQUIRED" ? "More information needed" : status === "REJECTED" ? "Mini App request decision" : "Mini App request updated",
-        body: input.publicMessage ?? `Your request is now ${status.toLowerCase().replaceAll("_", " ")}.`, data: { publicReference: current.publicReference } } }),
       tx.adminAuditLog.create({ data: { actorUserId: input.actorUserId, action: `MINI_APP_REQUEST_${input.action}`, targetType: "MiniAppRequest", targetId: current.id,
         before: { status: current.status }, after: { status }, metadata: { privateNotePresent: Boolean(input.privateNote) } } }),
     ]);
@@ -147,7 +160,7 @@ export async function approveRequest(requestId: string, actorUserId: string) {
     if (!current) throw new Error("REQUEST_NOT_FOUND");
     if (current.createdMiniApp) return { request: current, tenant: current.createdMiniApp };
     if (!["SUBMITTED", "UNDER_REVIEW", "INFORMATION_REQUIRED"].includes(current.status)) throw new Error("INVALID_STATE");
-    if (current.applicant.status !== "ACTIVE") throw new Error("APPLICANT_UNAVAILABLE");
+    if (!current.applicantUserId || !current.applicant || current.applicant.status !== "ACTIVE") throw new Error("IDENTITY_CLAIM_REQUIRED");
     if (!current.reservation || current.reservation.status !== "RESERVED" || current.reservation.slug !== current.requestedSlug) throw new Error("RESERVATION_INVALID");
     if (await tx.miniApp.count({ where: { slug: current.requestedSlug } })) throw new Error("SLUG_UNAVAILABLE");
     const provisioned = await provisionTenant(tx, { name: current.proposedName, slug: current.requestedSlug, description: current.description,

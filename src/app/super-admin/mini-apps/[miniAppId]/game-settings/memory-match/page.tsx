@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireSuperAdmin } from "@/lib/session";
 import { MemoryMatchSettingsForm } from "@/components/admin/memory-match-settings-form";
 export default async function SuperAdminMemorySettings({ params }: { params: Promise<{ miniAppId: string }> }) {
-  try { await requireSuperAdmin(); } catch { redirect("/games"); }
   const { miniAppId } = await params;
   const app = await prisma.miniApp.findUnique({ where: { id: miniAppId } });
   if (!app) redirect("/super-admin");

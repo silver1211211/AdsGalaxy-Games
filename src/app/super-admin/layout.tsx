@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { SuperAdminShell } from "@/components/super-admin/super-admin-shell";
 import { getAdminElevation } from "@/features/admin-security/elevation";
-import { requireSuperAdminIdentity } from "@/lib/session";
+import { requireSuperAdminPageIdentity } from "@/lib/page-auth";
 import { isSuperAdminTheme } from "@/features/super-admin/policy";
 
 export default async function Layout({
@@ -9,16 +9,7 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  let session;
-  try {
-    session = await requireSuperAdminIdentity();
-  } catch {
-    redirect(
-      process.env.NODE_ENV === "development"
-        ? "/dev/access?next=/super-admin"
-        : "/",
-    );
-  }
+  const session = await requireSuperAdminPageIdentity();
   const elevation = await getAdminElevation({
     userId: session.userId,
     scopeType: "SUPER_ADMIN",

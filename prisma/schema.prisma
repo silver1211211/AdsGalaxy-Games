@@ -359,6 +359,7 @@ enum TapSpawnStatus {
 enum AppSessionSource {
   TELEGRAM
   LOCAL_DEVELOPMENT
+  SUPER_ADMIN_BROWSER
 }
 
 enum ProfileTheme {
@@ -644,7 +645,11 @@ model MiniApp {
 model MiniAppRequest {
   id                        String                      @id @default(cuid())
   publicReference           String                      @unique @map("public_reference") @db.VarChar(20)
-  applicantUserId           String                      @map("applicant_user_id")
+  applicantUserId           String?                     @map("applicant_user_id")
+  applicantName             String                      @map("applicant_name") @db.VarChar(160)
+  telegramUsername          String?                     @map("telegram_username") @db.VarChar(64)
+  requestOrigin             String                      @default("WEB") @map("request_origin") @db.VarChar(16)
+  statusAccessTokenHash     String                      @map("status_access_token_hash") @db.VarChar(64)
   proposedName              String                      @map("proposed_name") @db.VarChar(100)
   requestedSlug             String                      @map("requested_slug") @db.VarChar(40)
   description               String                      @db.VarChar(500)
@@ -673,8 +678,8 @@ model MiniAppRequest {
   updatedAt                 DateTime                    @updatedAt @map("updated_at")
   adminCredentialIssuedAt   DateTime?                   @map("admin_credential_issued_at")
   adminCredentialRevealedAt DateTime?                   @map("admin_credential_revealed_at")
-  deviceIdentifierHash      String?                     @map("device_identifier_hash") @db.VarChar(64)
-  applicant                 User                        @relation("MiniAppRequestApplicant", fields: [applicantUserId], references: [id], onDelete: Restrict)
+  deviceIdentifierHash      String                      @map("device_identifier_hash") @db.VarChar(64)
+  applicant                 User?                       @relation("MiniAppRequestApplicant", fields: [applicantUserId], references: [id], onDelete: Restrict)
   assignedReviewer          User?                       @relation("MiniAppRequestReviewer", fields: [assignedReviewerId], references: [id], onDelete: SetNull)
   createdMiniApp            MiniApp?                    @relation(fields: [createdMiniAppId], references: [id], onDelete: SetNull)
   messages                  MiniAppRequestMessage[]
@@ -1818,7 +1823,7 @@ model RewardDailyUsage {
 model AdminAuditLog {
   id          String   @id @default(cuid())
   miniAppId   String?  @map("mini_app_id")
-  actorUserId String   @map("actor_user_id")
+  actorUserId String?  @map("actor_user_id")
   action      String
   targetType  String   @map("target_type")
   targetId    String?  @map("target_id")
@@ -1827,7 +1832,7 @@ model AdminAuditLog {
   metadata    Json?
   createdAt   DateTime @default(now()) @map("created_at")
   miniApp     MiniApp? @relation(fields: [miniAppId], references: [id], onDelete: SetNull)
-  actor       User     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
   @@index([miniAppId, createdAt])
   @@index([actorUserId, createdAt])
