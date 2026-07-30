@@ -10,6 +10,7 @@ import {
   sessionIdentifierHash,
 } from "@/lib/session";
 import { deviceLabel } from "@/features/profile/profile";
+import { telegramTenantContextMatches } from "@/features/tenant-admin/tenant-launch";
 
 const inputSchema = z.object({
   initData: z.string().min(1),
@@ -65,8 +66,7 @@ export async function POST(request: Request) {
     const validated = validateTelegramInitDataContext(input.initData, token);
     token = "";
     const platformSlug = process.env.PLATFORM_MINI_APP_SLUG ?? "ads-galaxy";
-    const launchSlug = validated.startParam ?? platformSlug;
-    if (launchSlug !== miniApp.slug)
+    if (!telegramTenantContextMatches(miniApp.slug, validated.startParam))
       return NextResponse.json(
         { error: "Invalid Telegram launch context" },
         { status: 401 },
@@ -100,14 +100,9 @@ export async function POST(request: Request) {
           telegramSyncedAt: new Date(),
         },
       });
-      const existingSuperAdmin = await tx.miniAppMembership.findFirst({
-        where: { userId: user.id, role: "SUPER_ADMIN", status: "ACTIVE" },
-        select: { id: true },
-      });
       const mayBecomeSuperAdmin =
-        (miniApp.slug === platformSlug &&
-          superAdminIds().has(String(telegram.id))) ||
-        Boolean(existingSuperAdmin);
+        miniApp.slug === platformSlug &&
+        superAdminIds().has(String(telegram.id));
       const existingMembership = await tx.miniAppMembership.findUnique({
         where: { miniAppId_userId: { miniAppId: miniApp.id, userId: user.id } },
         select: { role: true, status: true },

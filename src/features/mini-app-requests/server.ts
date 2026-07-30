@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { provisionTenant } from "@/features/super-admin/tenant-provisioning";
 import { normalizeRequestSlug, publicReference, requestSchema, validRequestSlug } from "./policy";
 import { createStatusAccessToken, hashStatusAccessToken, requestBlocksAnother } from "./device";
+import { generateTemporaryPassword, hashAdminPassword } from "@/features/admin-security/passwords";
 
 export async function slugAvailability(raw: string, currentRequestId?: string) {
   const slug = normalizeRequestSlug(raw);
@@ -154,28 +155,50 @@ export async function respondToInformation(userId: string, reference: string, me
   });
 }
 
-export async function approveRequest(requestId: string, actorUserId: string) {
+export async function approveRequest(requestId: string, actorUserId: string, administratorTelegramId: string) {
+  if (!/^\d{5,20}$/.test(administratorTelegramId)) throw new Error("ADMINISTRATOR_ID_REQUIRED");
+  const temporaryPassword = generateTemporaryPassword();
+  const passwordHash = await hashAdminPassword(temporaryPassword);
   return prisma.$transaction(async (tx) => {
     const current = await tx.miniAppRequest.findUnique({ where: { id: requestId }, include: { applicant: true, reservation: true, createdMiniApp: true } });
     if (!current) throw new Error("REQUEST_NOT_FOUND");
     if (current.createdMiniApp) return { request: current, tenant: current.createdMiniApp };
     if (!["SUBMITTED", "UNDER_REVIEW", "INFORMATION_REQUIRED"].includes(current.status)) throw new Error("INVALID_STATE");
-    if (!current.applicantUserId || !current.applicant || current.applicant.status !== "ACTIVE") throw new Error("IDENTITY_CLAIM_REQUIRED");
     if (!current.reservation || current.reservation.status !== "RESERVED" || current.reservation.slug !== current.requestedSlug) throw new Error("RESERVATION_INVALID");
     if (await tx.miniApp.count({ where: { slug: current.requestedSlug } })) throw new Error("SLUG_UNAVAILABLE");
+    const telegramId = BigInt(administratorTelegramId);
+    const existingAdministrator = await tx.user.findUnique({ where: { telegramId } });
+    if (existingAdministrator && ["BANNED", "DELETED"].includes(existingAdministrator.status))
+      throw new Error("ADMINISTRATOR_UNAVAILABLE");
+    const administrator = existingAdministrator
+      ? await tx.user.update({ where: { id: existingAdministrator.id }, data: { status: "ACTIVE" } })
+      : await tx.user.create({ data: {
+          telegramId, firstName: current.applicantName || "Tenant Administrator",
+          referralCode: crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase(),
+        } });
     const provisioned = await provisionTenant(tx, { name: current.proposedName, slug: current.requestedSlug, description: current.description,
-      administratorUserId: current.applicantUserId, actorUserId });
+      administratorUserId: administrator.id, actorUserId });
     const now = new Date();
+    const existingCredential = await tx.adminCredential.findUnique({
+      where: { userId_scopeType: { userId: administrator.id, scopeType: "TENANT_ADMIN" } },
+    });
+    if (!existingCredential) await tx.adminCredential.create({ data: {
+      userId: administrator.id, scopeType: "TENANT_ADMIN", passwordHash,
+      temporaryPassword: true, mustChangePassword: true, resetByUserId: actorUserId, resetAt: now,
+    } });
     const request = await tx.miniAppRequest.update({ where: { id: current.id }, data: { status: "APPROVED", approvedAt: now,
+      applicantUserId: current.applicantUserId ?? administrator.id,
       assignedReviewerId: current.assignedReviewerId ?? actorUserId, createdMiniAppId: provisioned.tenant.id,
+      adminCredentialIssuedAt: existingCredential?.createdAt ?? now,
+      adminCredentialRevealedAt: existingCredential ? current.adminCredentialRevealedAt : now,
       publicStatusMessage: "Approved. Your Mini App is ready. Complete secure Administrator password setup before managing it.",
       events: { create: { previousStatus: current.status, nextStatus: "APPROVED", actorUserId, publicMessage: "Tenant created" } } } });
     await tx.miniAppSlugReservation.update({ where: { requestId: current.id }, data: { status: "CONVERTED", convertedMiniAppId: provisioned.tenant.id } });
     await Promise.all([
-      tx.notification.create({ data: { userId: current.applicantUserId, title: "Your Mini App is ready", body: `${current.proposedName} was approved. A temporary Administrator password is available on the protected request-status page.`, data: { slug: current.requestedSlug, publicReference: current.publicReference } } }),
+      tx.notification.create({ data: { userId: administrator.id, title: "Your Mini App is ready", body: `${current.proposedName} was approved. Use the protected Administrator login and change any temporary password immediately.`, data: { slug: current.requestedSlug, publicReference: current.publicReference } } }),
       tx.adminAuditLog.create({ data: { miniAppId: provisioned.tenant.id, actorUserId, action: "MINI_APP_REQUEST_APPROVED", targetType: "MiniAppRequest", targetId: current.id,
-        before: { status: current.status }, after: { status: "APPROVED", tenantId: provisioned.tenant.id, administratorUserId: current.applicantUserId } } }),
+        before: { status: current.status }, after: { status: "APPROVED", tenantId: provisioned.tenant.id, administratorUserId: administrator.id, credentialCreated: !existingCredential } } }),
     ]);
-    return { request, tenant: provisioned.tenant };
+    return { request, tenant: provisioned.tenant, temporaryPassword: existingCredential ? null : temporaryPassword };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }

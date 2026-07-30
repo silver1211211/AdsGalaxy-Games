@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/session";
-import { redirect } from "next/navigation";
-import { requireAuthenticatedPage } from "@/lib/page-auth";
-import { isValidTenantSlug, tenantAccessAllowed } from "./boundary";
+import { getSession, requireSession } from "@/lib/session";
+import { notFound, redirect } from "next/navigation";
+import { isValidTenantSlug, tenantAccessAllowed, tenantAdminPageDecision } from "./boundary";
 export { isValidTenantSlug, tenantAccessAllowed } from "./boundary";
 
 export async function requireTenantAdminIdentity(tenantSlug: string) {
@@ -79,11 +78,15 @@ export async function requireTenantAdminPage(tenantSlug: string) {
 }
 
 export async function requireTenantAdminPageIdentity(tenantSlug: string) {
-  if (!isValidTenantSlug(tenantSlug)) redirect("/");
-  const session = await requireAuthenticatedPage({
-    roles: ["ADMIN", "SUPER_ADMIN"],
-    enforceTenantAvailability: true,
+  if (!isValidTenantSlug(tenantSlug)) notFound();
+  const tenant = await prisma.miniApp.findUnique({
+    where: { slug: tenantSlug },
+    select: { id: true, status: true },
   });
+  if (!tenant) notFound();
+  if (tenant.status !== "ACTIVE") redirect(`/${tenantSlug}`);
+  const session = await getSession();
+  if (!session) redirect(`/${tenantSlug}/administrator-login`);
   const membership = await prisma.miniAppMembership.findFirst({
     where: {
       id: session.membershipId,
@@ -95,14 +98,13 @@ export async function requireTenantAdminPageIdentity(tenantSlug: string) {
     },
     include: { miniApp: true, user: true },
   });
-  if (
-    !membership ||
-    !tenantAccessAllowed({
-      sessionMiniAppId: session.miniAppId,
-      sessionMembershipId: session.membershipId,
-      membership,
-    })
-  )
-    redirect("/");
+  if (tenantAdminPageDecision({ session, tenantId: tenant.id, membership }) !== "ALLOW")
+    redirect(`/${tenantSlug}`);
+  if (!membership) redirect(`/${tenantSlug}`);
+  const credential = await prisma.adminCredential.findUnique({
+    where: { userId_scopeType: { userId: session.userId, scopeType: "TENANT_ADMIN" } },
+    select: { id: true },
+  });
+  if (!credential) redirect(`/${tenantSlug}/administrator-login`);
   return { ...session, membership, miniApp: membership.miniApp };
 }

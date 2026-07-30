@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Settings, ExternalLink, ShieldCheck } from "lucide-react";
 import { AdminNavigation } from "./admin-navigation";
+import { TenantAdminLogoutButton } from "./logout-button";
 
 export function TenantAdminShell({
   tenantSlug,
@@ -40,13 +41,10 @@ export function TenantAdminShell({
               Admin dashboard
             </p>
           </div>
-          <Link
-            href={`${base}/settings`}
-            className="game-icon-button"
-            aria-label="Admin settings"
-          >
-            <Settings size={17} />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`${base}/settings`} className="game-icon-button" aria-label="Admin settings"><Settings size={17} /></Link>
+            <TenantAdminLogoutButton tenantSlug={tenantSlug} />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-[1200px] px-4 pb-28 pt-7 sm:px-7 lg:pb-12">
           {children}

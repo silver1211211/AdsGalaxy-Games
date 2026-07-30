@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { miniAppSlugForPath } from "@/features/tenant-admin/tenant-launch";
 
 type TelegramUser = {
   id?: number;
@@ -100,10 +101,8 @@ export function TelegramProvider({
             avatar: raw.photo_url,
           });
       }
-      const signedStartParam = webApp?.initData
-        ? new URLSearchParams(webApp.initData).get("start_param")
-        : null;
-      const launchSlug = signedStartParam ?? platformMiniAppSlug;
+      const routeSlug = miniAppSlugForPath(window.location.pathname, platformMiniAppSlug);
+      const launchSlug = routeSlug;
       let response = await fetch("/api/auth/session", { cache: "no-store" });
       let sessionMatchesLaunch = false;
       if (response.ok) {

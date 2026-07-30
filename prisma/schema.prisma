@@ -360,6 +360,7 @@ enum AppSessionSource {
   TELEGRAM
   LOCAL_DEVELOPMENT
   SUPER_ADMIN_BROWSER
+  TENANT_ADMIN_BROWSER
 }
 
 enum ProfileTheme {
