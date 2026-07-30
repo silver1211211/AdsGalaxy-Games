@@ -14,6 +14,12 @@ export function hashDeviceIdentifier(value: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
+export function hashRequestIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const address = forwarded || request.headers.get("x-real-ip") || "unknown";
+  return createHmac("sha256", requestSecret()).update(`request-ip:${address}`).digest("hex");
+}
+
 function requestSecret() {
   const secret = process.env.DEVICE_IDENTIFIER_HASH_SECRET ?? process.env.REQUEST_IP_HASH_SECRET;
   if (!secret || secret.length < 32) throw new Error("DEVICE_IDENTIFIER_HASH_SECRET_UNAVAILABLE");

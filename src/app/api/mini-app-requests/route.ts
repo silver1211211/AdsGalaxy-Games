@@ -7,6 +7,7 @@ import { assertSameOrigin, rateLimit } from "@/features/profile/security";
 import { submitMiniAppRequest } from "@/features/mini-app-requests/server";
 import {
   hashDeviceIdentifier,
+  hashRequestIp,
   hashStatusAccessToken,
   requestStatusCookieName,
   REQUEST_DEVICE_COOKIE,
@@ -22,13 +23,16 @@ export async function POST(request: Request) {
     if (!rawDevice)
       return Response.json({ error: "Secure device verification is required. Refresh and try again.", code: "DEVICE_REQUIRED" }, { status: 428 });
     const deviceIdentifierHash = hashDeviceIdentifier(rawDevice);
+    const ipHash = hashRequestIp(request);
     rateLimit(`mini-app-request-device:${deviceIdentifierHash}`, 3, 60 * 60_000);
+    rateLimit(`mini-app-request-ip:${ipHash}`, 12, 60 * 60_000);
     if (session && session.source !== "DEVELOPMENT")
       rateLimit(`mini-app-request-user:${session.userId}`, 3, 60 * 60_000);
     const result = await submitMiniAppRequest(
       session?.source === "DEVELOPMENT" ? null : (session?.userId ?? null),
       deviceIdentifierHash,
       await request.json(),
+      ipHash,
     );
     const response = Response.json({
       publicReference: result.request.publicReference,

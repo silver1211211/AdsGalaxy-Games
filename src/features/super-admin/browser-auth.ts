@@ -14,7 +14,7 @@ import {
 } from "@/features/admin-security/elevation";
 import {
   browserLoginDestination,
-  normalizeSuperAdminIdentifier,
+  configuredSuperAdminIdentifier,
   superAdminBrowserSessionBinding,
   superAdminLoginEligibility,
   superAdminLogoutScope,
@@ -56,14 +56,13 @@ async function recordRejectedLogin(input: {
 }
 
 export async function authenticateSuperAdminBrowser(input: {
-  identifier: string;
   password: string;
   request: Request;
 }) {
-  const identifier = normalizeSuperAdminIdentifier(input.identifier);
-  const identifierHash = loginIdentifierHash(identifier ?? input.identifier.trim());
+  const identifier = configuredSuperAdminIdentifier(process.env.SUPER_ADMIN_TELEGRAM_IDS);
+  const identifierHash = loginIdentifierHash(identifier ?? "configuration-unavailable");
   if (!identifier) {
-    await recordRejectedLogin({ identifierHash, reason: "INVALID_IDENTIFIER_FORMAT" });
+    await recordRejectedLogin({ identifierHash, reason: "CONFIGURATION_UNAVAILABLE" });
     throw new Error("INVALID_CREDENTIALS");
   }
 

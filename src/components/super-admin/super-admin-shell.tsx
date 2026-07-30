@@ -75,7 +75,7 @@ export function SuperAdminShell({ children, initialTheme, accountName }: {
       <header className="sa-header"><button className="sa-icon lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu/></button>
         <div className="min-w-0"><p className="truncate text-sm font-black">{accountName}</p><p className="sa-muted text-[10px] uppercase tracking-wider">Global platform workspace</p></div>
         <ContextHelp content={pageHelp}/>
-        <div className="ml-auto hidden sm:block"><ThemeSwitch theme={theme} onChange={changeTheme} compact/></div>
+        <div className="ml-auto shrink-0"><ThemeSwitch theme={theme} onChange={changeTheme} compact/></div>
       </header>
       <main className="sa-main">{children}</main>
     </div>

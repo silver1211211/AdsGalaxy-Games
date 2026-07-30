@@ -28,6 +28,8 @@ export function validatePermanentPassword(password: string, context?: {
   const normalized = password.toLocaleLowerCase();
   if (password.length < PASSWORD_MIN_LENGTH) errors.push(`Use at least ${PASSWORD_MIN_LENGTH} characters.`);
   if (password.length > PASSWORD_MAX_LENGTH) errors.push(`Use no more than ${PASSWORD_MAX_LENGTH} characters.`);
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password))
+    errors.push("Include both letters and numbers.");
   if (COMMON_PASSWORDS.has(normalized)) errors.push("Choose a password that is not commonly used.");
   if (/^(.)\1{5,}$/.test(password) || /(?:012345|123456|234567|345678|456789|987654)/.test(normalized))
     errors.push("Avoid repeated or sequential characters.");

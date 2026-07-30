@@ -22,7 +22,7 @@ export async function slugAvailability(raw: string, currentRequestId?: string) {
   return { slug, status: "AVAILABLE" as const, available: true };
 }
 
-export async function submitMiniAppRequest(userId: string | null, deviceIdentifierHash: string, raw: unknown) {
+export async function submitMiniAppRequest(userId: string | null, deviceIdentifierHash: string, raw: unknown, abuseIpHash?: string) {
   const input = requestSchema.parse(raw), slug = normalizeRequestSlug(input.requestedSlug);
   const statusAccessToken = createStatusAccessToken();
   if (slug !== input.requestedSlug || !validRequestSlug(slug)) throw new Error("INVALID_SLUG");
@@ -46,10 +46,10 @@ export async function submitMiniAppRequest(userId: string | null, deviceIdentifi
     const request = await tx.miniAppRequest.create({ data: {
       publicReference: publicReference(), applicantUserId: userId,
       applicantName: user ? `${user.firstName} ${user.lastName ?? ""}`.trim() : input.applicantName,
-      telegramUsername: user?.username ?? (input.telegramUsername ? input.telegramUsername.replace(/^@/, "") : null),
+      telegramUsername: user?.username ?? (input.telegramUsername || null),
       requestOrigin: user ? "TELEGRAM" : "WEB", statusAccessTokenHash: hashStatusAccessToken(statusAccessToken),
       proposedName: input.proposedName, requestedSlug: slug,
-      description: input.description, intendedAudience: input.intendedAudience, category: input.category, contactMethod: input.contactMethod,
+      description: input.description, intendedAudience: input.intendedAudience, category: input.category,
       primaryPromotionChannel: input.primaryPromotionChannel, primaryPromotionUrl: input.primaryPromotionUrl,
       estimatedAudienceSize: input.estimatedAudienceSize, expectedFirstWeekUsers: input.expectedFirstWeekUsers,
       promotionPlan: input.promotionPlan, additionalLinks: input.additionalLinks, idempotencyKey: input.idempotencyKey, deviceIdentifierHash,
@@ -58,7 +58,7 @@ export async function submitMiniAppRequest(userId: string | null, deviceIdentifi
       events: { create: { nextStatus: "SUBMITTED", actorUserId: userId, publicMessage: "Request submitted" } },
     }, include: { reservation: true } });
     await Promise.all([
-      tx.adminAuditLog.create({ data: { actorUserId: userId ?? undefined, action: "MINI_APP_REQUEST_SUBMITTED", targetType: "MiniAppRequest", targetId: request.id, after: { publicReference: request.publicReference, slug } } }),
+      tx.adminAuditLog.create({ data: { actorUserId: userId ?? undefined, action: "MINI_APP_REQUEST_SUBMITTED", targetType: "MiniAppRequest", targetId: request.id, after: { publicReference: request.publicReference, slug }, metadata: abuseIpHash ? { abuseIpHash } : undefined } }),
       ...(userId ? [tx.notification.create({ data: { userId, title: "Mini App request submitted", body: `${request.publicReference} is waiting for platform review.`, data: { publicReference: request.publicReference } } })] : []),
     ]);
     const reviewers = await tx.miniAppMembership.findMany({ where: { role: "SUPER_ADMIN", status: "ACTIVE" }, select: { userId: true }, distinct: ["userId"] });

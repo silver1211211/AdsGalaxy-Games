@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   browserLoginDestination,
-  normalizeSuperAdminIdentifier,
+  configuredSuperAdminIdentifier,
   superAdminBrowserSessionBinding,
   superAdminLoginEligibility,
   superAdminLogoutScope,
@@ -17,9 +17,11 @@ const eligible = {
 };
 
 describe("Super Admin browser authentication policy", () => {
-  it("accepts an approved numeric identifier without a Telegram username", () => {
-    expect(normalizeSuperAdminIdentifier("123456789")).toBe("123456789");
-    expect(normalizeSuperAdminIdentifier("@owner")).toBeNull();
+  it("resolves exactly one configured numeric identifier server-side", () => {
+    expect(configuredSuperAdminIdentifier("123456789")).toBe("123456789");
+    expect(configuredSuperAdminIdentifier("123456789,987654321")).toBeNull();
+    expect(configuredSuperAdminIdentifier("@owner")).toBeNull();
+    expect(configuredSuperAdminIdentifier(undefined)).toBeNull();
   });
 
   it("accepts a valid active platform Super Admin credential", () => {

@@ -19,15 +19,15 @@ describe("Administrator password policy", () => {
     expect(validatePermanentPassword("1111111111")).not.toHaveLength(0);
     expect(validatePermanentPassword("AG-7KQ9-N4TX-P2AA")).not.toHaveLength(0);
     expect(validatePermanentPassword("my-galaxy-secure-pass", { tenantSlug: "my-galaxy" })).not.toHaveLength(0);
-    expect(validatePermanentPassword("correct horse battery staple")).toEqual([]);
+    expect(validatePermanentPassword("correct horse battery 7")).toEqual([]);
   });
 
   it("uses salted bcrypt hashes and verifies without exposing the password", async () => {
-    const one = await hashAdminPassword("correct horse battery staple");
-    const two = await hashAdminPassword("correct horse battery staple");
+    const one = await hashAdminPassword("correct horse battery 7");
+    const two = await hashAdminPassword("correct horse battery 7");
     expect(one).not.toBe(two);
-    expect(one).not.toContain("correct horse battery staple");
-    expect(await verifyAdminPassword("correct horse battery staple", one)).toBe(true);
+    expect(one).not.toContain("correct horse battery 7");
+    expect(await verifyAdminPassword("correct horse battery 7", one)).toBe(true);
     expect(await verifyAdminPassword("wrong", one)).toBe(false);
     expect(adminPasswordNeedsRehash(one)).toBe(false);
   }, 15_000);

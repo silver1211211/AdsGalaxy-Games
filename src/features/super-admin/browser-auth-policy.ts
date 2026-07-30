@@ -1,8 +1,10 @@
-export const GENERIC_LOGIN_ERROR = "Invalid Super Admin credentials.";
+export const GENERIC_LOGIN_ERROR = "Invalid password or account unavailable.";
 
-export function normalizeSuperAdminIdentifier(value: string) {
-  const identifier = value.trim();
-  return /^\d{5,20}$/.test(identifier) ? identifier : null;
+export function configuredSuperAdminIdentifier(value: string | undefined) {
+  const identifiers = (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
+  return identifiers.length === 1 && /^\d{5,20}$/.test(identifiers[0])
+    ? identifiers[0]
+    : null;
 }
 
 export function browserLoginDestination(mustChangePassword: boolean) {

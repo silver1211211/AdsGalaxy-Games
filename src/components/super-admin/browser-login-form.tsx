@@ -5,7 +5,6 @@ import { ShieldCheck } from "lucide-react";
 import { PlatformPopup } from "@/components/system/platform-popup";
 
 export function SuperAdminBrowserLoginForm() {
-  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -18,11 +17,11 @@ export function SuperAdminBrowserLoginForm() {
       const response = await fetch("/api/super-admin/browser-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ password }),
       });
       const body = await response.json();
       if (!response.ok) {
-        setError(body.error ?? "Invalid Super Admin credentials.");
+        setError(body.error ?? "Invalid password or account unavailable.");
         return;
       }
       location.assign(body.destination);
@@ -46,23 +45,11 @@ export function SuperAdminBrowserLoginForm() {
               </p>
             </div>
           </div>
-          <h1 className="mt-8 text-3xl font-black">Sign in</h1>
+          <h1 className="mt-8 text-3xl font-black">Super Admin Login</h1>
           <p className="sa-muted mt-2 text-sm leading-6">
-            Use your approved numeric Super Admin identifier and platform password.
+            Enter the secure platform password to continue.
           </p>
           <form onSubmit={submit} className="mt-7 grid gap-5">
-            <label className="grid gap-2 text-sm font-bold">
-              Super Admin numeric ID
-              <input
-                inputMode="numeric"
-                autoComplete="username"
-                pattern="[0-9]{5,20}"
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
-                className="min-h-12 rounded-xl border bg-white px-3 text-ink"
-                required
-              />
-            </label>
             <label className="grid gap-2 text-sm font-bold">
               Password
               <input

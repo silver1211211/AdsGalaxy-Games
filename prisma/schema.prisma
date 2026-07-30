@@ -655,7 +655,7 @@ model MiniAppRequest {
   description               String                      @db.VarChar(500)
   intendedAudience          String                      @map("intended_audience") @db.VarChar(500)
   category                  String                      @db.VarChar(32)
-  contactMethod             String                      @map("contact_method") @db.VarChar(160)
+  contactMethod             String?                     @map("contact_method") @db.VarChar(160)
   primaryPromotionChannel   String                      @map("primary_promotion_channel") @db.VarChar(32)
   primaryPromotionUrl       String                      @map("primary_promotion_url") @db.VarChar(500)
   estimatedAudienceSize     Int                         @map("estimated_audience_size")

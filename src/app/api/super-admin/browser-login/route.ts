@@ -8,7 +8,6 @@ import {
 } from "@/features/super-admin/browser-auth";
 
 const schema = z.object({
-  identifier: z.string().trim().min(1).max(32),
   password: z.string().min(1).max(256),
 }).strict();
 
@@ -18,11 +17,11 @@ export async function POST(request: Request) {
     const input = schema.parse(await request.json());
     rateLimit(`super-admin-browser-ip:${requestIpHash(request)}`, 20, 15 * 60_000);
     rateLimit(
-      `super-admin-browser-id:${loginIdentifierHash(input.identifier)}`,
+      `super-admin-browser-account:${loginIdentifierHash(process.env.SUPER_ADMIN_TELEGRAM_IDS ?? "unavailable")}`,
       8,
       15 * 60_000,
     );
-    return Response.json(await authenticateSuperAdminBrowser({ ...input, request }));
+    return Response.json(await authenticateSuperAdminBrowser({ password: input.password, request }));
   } catch (error) {
     if (error instanceof Response) {
       if (error.status === 429)
