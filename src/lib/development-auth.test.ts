@@ -4,6 +4,8 @@ import {
   developmentAuthAllowed,
   developmentAdminTenantSlug,
   developmentIdentity,
+  developmentPublicTenantSlug,
+  developmentTenantSlug,
   developmentSuperAdminIdentity,
   developmentRole,
   developmentRouteVisible,
@@ -74,6 +76,15 @@ describe("development authentication boundary", () => {
     expect(developmentAdminTenantSlug("/test/admin/settings")).toBe("test");
     expect(developmentAdminTenantSlug("/games")).toBeNull();
     expect(developmentAdminTenantSlug("//evil.test/admin")).toBeNull();
+  });
+  it("resolves a local USER tenant only from a canonical public tenant path", () => {
+    expect(developmentTenantSlug("silver")).toBe("silver");
+    expect(developmentTenantSlug("games")).toBeNull();
+    expect(developmentTenantSlug("../silver")).toBeNull();
+    expect(developmentPublicTenantSlug("/silver")).toBe("silver");
+    expect(developmentPublicTenantSlug("/silver/")).toBe("silver");
+    expect(developmentPublicTenantSlug("/silver/admin")).toBeNull();
+    expect(developmentPublicTenantSlug("/games")).toBeNull();
   });
   it("never accepts browser-selected identity fields", () => {
     const identity = developmentIdentity({

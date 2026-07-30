@@ -1,4 +1,5 @@
 import type { MembershipRole } from "@prisma/client";
+import { isValidTenantSlug } from "../features/tenant-admin/boundary";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 export const DEVELOPMENT_ROLES = ["USER", "ADMIN", "SUPER_ADMIN"] as const;
@@ -114,6 +115,21 @@ export function developmentAdminTenantSlug(value: unknown) {
     /^\/([a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?)\/admin(?:\/|$)/,
   );
   return match?.[1] ?? null;
+}
+
+export function developmentTenantSlug(value: unknown) {
+  return typeof value === "string" && isValidTenantSlug(value)
+    ? value
+    : null;
+}
+
+export function developmentPublicTenantSlug(value: unknown) {
+  const safe = validatedDevelopmentRedirect(value);
+  if (!safe) return null;
+  const match = safe.match(
+    /^\/([a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?)\/?$/,
+  );
+  return developmentTenantSlug(match?.[1]);
 }
 
 export function developmentIdentity(env: NodeJS.ProcessEnv = process.env) {

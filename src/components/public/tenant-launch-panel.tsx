@@ -24,6 +24,10 @@ export function TenantLaunchPanel({
     return <p className="mt-6 flex items-center gap-2 rounded-xl bg-white/10 p-4 text-sm font-bold"><LoaderCircle className="animate-spin" size={18}/>Authenticating this Telegram Mini App securely…</p>;
   if (decision === "AUTHENTICATED")
     return <div className="mt-6 flex flex-wrap gap-3"><Link href="/games" className="game-primary">Enter protected features</Link></div>;
+  if (decision === "LOCAL_DEVELOPMENT")
+    return <div className="mt-6"><p className="text-xs font-black uppercase tracking-wider text-teal-200">Local development preview</p><div className="mt-3 flex flex-wrap gap-2"><Link href="/games" className="game-primary">Games</Link><Link href="/tasks" className="game-secondary">Tasks</Link><Link href="/wallet" className="game-secondary">Wallet</Link><Link href="/profile" className="game-secondary">Profile</Link></div></div>;
+  if (decision === "LOCAL_DEVELOPMENT_REQUIRED")
+    return <div className="mt-6 rounded-xl bg-white/10 p-4 text-sm"><p className="font-bold">Local tenant access requires an approved development session.</p><Link href={`/dev/access?next=/${encodeURIComponent(tenantSlug)}`} className="game-secondary mt-3">Open local development access</Link></div>;
   if (decision === "FAILED")
     return <div className="mt-6 rounded-xl bg-coral-500/20 p-4 text-sm"><p className="font-bold">{telegram.authenticationError ?? "Telegram authentication failed for this Mini App."}</p><button type="button" onClick={telegram.retryAuthentication} className="game-secondary mt-3"><RefreshCw size={16}/>Retry authentication</button></div>;
   if (decision === "MISMATCH")

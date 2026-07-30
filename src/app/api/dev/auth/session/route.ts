@@ -13,13 +13,19 @@ import {
   developmentAdminTenantSlug,
   developmentAuthAllowed,
   developmentIdentity,
+  developmentPublicTenantSlug,
+  developmentTenantSlug,
   developmentSuperAdminIdentity,
   developmentRole,
   safeDevelopmentRedirect,
 } from "@/lib/development-auth";
 
 const schema = z
-  .object({ role: z.string(), next: z.string().optional() })
+  .object({
+    role: z.string(),
+    next: z.string().optional(),
+    tenantSlug: z.string().optional(),
+  })
   .strict();
 export async function POST(request: Request) {
   if (!developmentAuthAllowed(request.headers.get("host")))
@@ -50,6 +56,11 @@ export async function POST(request: Request) {
     const role = developmentRole(input.role);
     if (!role)
       return NextResponse.json({ error: "Invalid role" }, { status: 422 });
+    if (input.tenantSlug && !developmentTenantSlug(input.tenantSlug))
+      return NextResponse.json(
+        { error: "Invalid development tenant.", code: "INVALID_TENANT" },
+        { status: 422 },
+      );
     if (
       role === "SUPER_ADMIN" &&
       process.env.ALLOW_DEVELOPMENT_SUPER_ADMIN_ACCESS !== "true"
@@ -64,15 +75,28 @@ export async function POST(request: Request) {
         : developmentIdentity();
     await prisma.$queryRaw`SELECT 1`;
     const requestedTenantSlug =
-      role === "ADMIN" ? developmentAdminTenantSlug(input.next) : null;
+      role === "ADMIN"
+        ? developmentAdminTenantSlug(input.next)
+        : role === "USER"
+          ? developmentTenantSlug(input.tenantSlug) ??
+            developmentPublicTenantSlug(input.next)
+          : null;
     const result = await prisma.$transaction(async (tx) => {
-      const miniApp = requestedTenantSlug
-        ? await tx.miniApp.findUnique({ where: { slug: requestedTenantSlug } })
-        : await tx.miniApp.upsert({
-            where: { slug: identity.miniAppSlug },
+      const targetSlug = requestedTenantSlug ?? identity.miniAppSlug;
+      const miniApp =
+        role === "ADMIN" && requestedTenantSlug
+          ? await tx.miniApp.findUnique({ where: { slug: requestedTenantSlug } })
+          : await tx.miniApp.upsert({
+            where: { slug: targetSlug },
             create: {
-              slug: identity.miniAppSlug,
-              name: identity.miniAppName,
+              slug: targetSlug,
+              name:
+                requestedTenantSlug && role === "USER"
+                  ? `${requestedTenantSlug
+                      .split("-")
+                      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                      .join(" ")} Local Development`
+                  : identity.miniAppName,
               status: "ACTIVE",
             },
             update: { status: "ACTIVE" },
@@ -127,6 +151,11 @@ export async function POST(request: Request) {
           create: { miniAppId: miniApp.id },
           update: {},
         }),
+        tx.mazeRunnerSettings.upsert({
+          where: { miniAppId: miniApp.id },
+          create: { miniAppId: miniApp.id },
+          update: {},
+        }),
         tx.walletSettings.upsert({
           where: { miniAppId: miniApp.id },
           create: { miniAppId: miniApp.id },
@@ -145,6 +174,13 @@ export async function POST(request: Request) {
             environment: "DEVELOPMENT_MOCK",
             status: "INACTIVE",
           },
+          update: {},
+        }),
+        tx.miniAppUserProfile.upsert({
+          where: {
+            miniAppId_userId: { miniAppId: miniApp.id, userId: user.id },
+          },
+          create: { miniAppId: miniApp.id, userId: user.id },
           update: {},
         }),
       ]);

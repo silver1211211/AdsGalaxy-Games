@@ -156,6 +156,10 @@ export function TelegramProvider({
       window.location.pathname,
       platformMiniAppSlug,
     );
+    const localTenantFeatureRoute =
+      /^\/(?:games|tasks|wallet|profile)(?:\/|$)/.test(
+        window.location.pathname,
+      );
     setCurrentTenantSlug(routeSlug);
     setProviderPhase("UNRESOLVED");
     setAuthenticationError(null);
@@ -206,6 +210,32 @@ export function TelegramProvider({
     window.addEventListener("pageshow", lifecycleCheck);
     document.addEventListener("visibilitychange", lifecycleCheck);
     void (async () => {
+      let sessionResponse = await fetch("/api/auth/session", {
+        cache: "no-store",
+      });
+      let sessionTenantSlug: string | null = null;
+      let localDevelopmentSession = false;
+      if (sessionResponse.ok) {
+        const session = (await sessionResponse.json().catch(() => null)) as {
+          localDevelopment?: boolean;
+          miniApp?: { slug?: string };
+        } | null;
+        sessionTenantSlug = session?.miniApp?.slug ?? null;
+        localDevelopmentSession = session?.localDevelopment === true;
+      }
+      if (
+        localDevelopmentSession &&
+        sessionTenantSlug &&
+        (sessionTenantSlug === routeSlug || localTenantFeatureRoute)
+      ) {
+        setCurrentTenantSlug(sessionTenantSlug);
+        setAuthenticated(true);
+        setAuthenticatedTenantSlug(sessionTenantSlug);
+        setProviderPhase("LOCAL_DEVELOPMENT_AUTHENTICATED");
+        await refreshDashboard();
+        return;
+      }
+
       const detected = await detectTelegramRuntime({ inspect, wait });
       if (!active) return;
       detectionResolved = true;
@@ -220,17 +250,6 @@ export function TelegramProvider({
           username: raw.username,
           avatar: raw.photo_url,
         });
-
-      let sessionResponse = await fetch("/api/auth/session", {
-        cache: "no-store",
-      });
-      let sessionTenantSlug: string | null = null;
-      if (sessionResponse.ok) {
-        const session = (await sessionResponse.json().catch(() => null)) as {
-          miniApp?: { slug?: string };
-        } | null;
-        sessionTenantSlug = session?.miniApp?.slug ?? null;
-      }
 
       if (!detected.signedInitDataPresent) {
         if (!active) return;
@@ -251,7 +270,16 @@ export function TelegramProvider({
             setUser(context.dashboard.user);
           }
         }
-        if (active) setProviderPhase("BROWSER");
+        if (active) {
+          const developmentStatus = await fetch("/api/dev/auth/status", {
+            cache: "no-store",
+          }).catch(() => null);
+          setProviderPhase(
+            developmentStatus?.ok
+              ? "LOCAL_DEVELOPMENT_REQUIRED"
+              : "BROWSER",
+          );
+        }
         return;
       }
 

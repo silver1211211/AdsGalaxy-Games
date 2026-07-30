@@ -1,7 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 import { APPLICATION_SESSION_COOKIE_NAME } from "./access-cookie-names";
+import { developmentAuthAllowed } from "./development-auth";
 
 export const SESSION_COOKIE_NAME = APPLICATION_SESSION_COOKIE_NAME;
 const MAX_AGE_SECONDS = 60 * 60 * 12;
@@ -70,6 +71,10 @@ export async function getSession() {
   if (!token) return null;
   const payload = verifySessionToken(token);
   if (!payload) return null;
+  if (
+    payload.source === "DEVELOPMENT" &&
+    !developmentAuthAllowed((await headers()).get("host"))
+  ) return null;
   const membership = await prisma.miniAppMembership.findFirst({
     where: {
       id: payload.membershipId,
@@ -93,6 +98,10 @@ export async function getSession() {
     }
   });
   if (!appSession) return null;
+  if (
+    (payload.source === "DEVELOPMENT" && appSession.source !== "LOCAL_DEVELOPMENT") ||
+    (payload.source !== "DEVELOPMENT" && appSession.source === "LOCAL_DEVELOPMENT")
+  ) return null;
   if (Date.now() - appSession.lastSeenAt.getTime() > 5 * 60 * 1000) {
     void prisma.appSession.update({ where: { id: appSession.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);
     void prisma.miniAppMembership.update({ where: { id: membership.id }, data: { lastActiveAt: new Date() } }).catch(() => undefined);

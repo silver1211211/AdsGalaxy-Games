@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { developmentAuthAllowed } from "@/lib/development-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession();
   if (!session)
     return NextResponse.json({ authenticated: false }, { status: 401 });
+  const localDevelopment = session.source === "DEVELOPMENT";
+  if (
+    localDevelopment &&
+    !developmentAuthAllowed(request.headers.get("host"))
+  )
+    return NextResponse.json({ authenticated: false }, { status: 401 });
   return NextResponse.json({
     authenticated: true,
+    localDevelopment,
     user: {
       id: session.user.id,
       firstName: session.user.firstName,

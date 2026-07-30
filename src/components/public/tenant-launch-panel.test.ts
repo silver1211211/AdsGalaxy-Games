@@ -9,7 +9,9 @@ const decide = (
     | "TELEGRAM_AUTHENTICATING"
     | "TELEGRAM_AUTHENTICATED"
     | "TELEGRAM_FAILED"
-    | "TENANT_MISMATCH",
+    | "TENANT_MISMATCH"
+    | "LOCAL_DEVELOPMENT_AUTHENTICATED"
+    | "LOCAL_DEVELOPMENT_REQUIRED",
   botConfigured = true,
 ) => tenantLaunchDecision({ providerPhase, botConfigured });
 
@@ -39,5 +41,19 @@ describe("tenant Telegram launch state machine", () => {
     );
     expect(panel).toContain("Retry authentication");
     expect(panel).toContain("Retry for this Mini App");
+  });
+  it("shows explicit local access states without Telegram messaging", () => {
+    expect(decide("LOCAL_DEVELOPMENT_AUTHENTICATED")).toBe(
+      "LOCAL_DEVELOPMENT",
+    );
+    expect(decide("LOCAL_DEVELOPMENT_REQUIRED")).toBe(
+      "LOCAL_DEVELOPMENT_REQUIRED",
+    );
+    const panel = readFileSync(
+      "src/components/public/tenant-launch-panel.tsx",
+      "utf8",
+    );
+    expect(panel).toContain("Local development preview");
+    expect(panel).toContain("Open local development access");
   });
 });

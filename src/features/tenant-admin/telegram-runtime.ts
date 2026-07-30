@@ -18,7 +18,9 @@ export type TelegramRuntimeDiagnostics = Omit<
     | "TELEGRAM_AUTHENTICATING"
     | "TELEGRAM_AUTHENTICATED"
     | "TELEGRAM_FAILED"
-    | "TENANT_MISMATCH";
+    | "TENANT_MISMATCH"
+    | "LOCAL_DEVELOPMENT_AUTHENTICATED"
+    | "LOCAL_DEVELOPMENT_REQUIRED";
   authenticationAttempted: boolean;
   authenticatedTenantSlug: string | null;
   authenticationErrorCode: string | null;
