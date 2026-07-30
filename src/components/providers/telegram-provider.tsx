@@ -9,6 +9,12 @@ import {
   useState,
 } from "react";
 import { miniAppSlugForPath } from "@/features/tenant-admin/tenant-launch";
+import {
+  detectTelegramRuntime,
+  emptyTelegramRuntimeSnapshot,
+  type TelegramRuntimeDiagnostics,
+  type TelegramRuntimeSnapshot,
+} from "@/features/tenant-admin/telegram-runtime";
 
 type TelegramUser = {
   id?: number;
@@ -32,6 +38,7 @@ export type DashboardData = {
     environment: string | null;
   };
 };
+type ProviderPhase = TelegramRuntimeDiagnostics["providerPhase"];
 type TelegramContextValue = {
   user: TelegramUser;
   isTelegram: boolean;
@@ -39,15 +46,66 @@ type TelegramContextValue = {
   signedInitDataPresent: boolean;
   ready: boolean;
   authenticated: boolean;
-  authenticationStatus: "DETECTING" | "BROWSER" | "AUTHENTICATING" | "AUTHENTICATED" | "FAILED";
+  providerPhase: ProviderPhase;
   authenticationError: string | null;
   currentTenantSlug: string | null;
+  authenticatedTenantSlug: string | null;
+  diagnostics: TelegramRuntimeDiagnostics;
   dashboard: DashboardData | null;
   retryAuthentication(): void;
   refreshDashboard(): Promise<void>;
 };
+type TelegramWebApp = {
+  ready(): void;
+  expand(): void;
+  initData?: string;
+  initDataUnsafe?: {
+    start_param?: string;
+    user?: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+      photo_url?: string;
+    };
+  };
+  onEvent?(event: "viewportChanged" | "themeChanged", callback: () => void): void;
+  offEvent?(event: "viewportChanged" | "themeChanged", callback: () => void): void;
+};
+
 const TelegramContext = createContext<TelegramContextValue | null>(null);
 const fallbackUser = { firstName: "Player" };
+const initialSnapshot = emptyTelegramRuntimeSnapshot();
+const initialDiagnostics: TelegramRuntimeDiagnostics = {
+  sdkDetected: false,
+  webAppDetected: false,
+  signedInitDataPresent: false,
+  initDataLength: 0,
+  startParamPresent: false,
+  routeTenantSlug: "",
+  providerPhase: "UNRESOLVED",
+  authenticationAttempted: false,
+  authenticatedTenantSlug: null,
+  authenticationErrorCode: null,
+};
+
+function telegramWindow() {
+  return window as Window & { Telegram?: { WebApp?: TelegramWebApp } };
+}
+
+function inspectTelegramRuntime(): TelegramRuntimeSnapshot {
+  const sdk = telegramWindow().Telegram;
+  const webApp = sdk?.WebApp;
+  const initData = webApp?.initData ?? "";
+  return {
+    sdkDetected: Boolean(sdk),
+    webAppDetected: Boolean(webApp),
+    signedInitDataPresent: initData.length > 0,
+    initDataLength: initData.length,
+    startParamPresent: Boolean(webApp?.initDataUnsafe?.start_param),
+    initData,
+  };
+}
 
 export function TelegramProvider({
   children,
@@ -57,14 +115,22 @@ export function TelegramProvider({
   platformMiniAppSlug: string;
 }) {
   const [user, setUser] = useState<TelegramUser>(fallbackUser);
-  const [isTelegram, setIsTelegram] = useState(false);
-  const [telegramSdkPresent, setTelegramSdkPresent] = useState(false);
-  const [signedInitDataPresent, setSignedInitDataPresent] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [runtime, setRuntime] = useState(initialSnapshot);
+  const [providerPhase, setProviderPhase] =
+    useState<ProviderPhase>("UNRESOLVED");
   const [authenticated, setAuthenticated] = useState(false);
-  const [authenticationStatus, setAuthenticationStatus] = useState<TelegramContextValue["authenticationStatus"]>("DETECTING");
-  const [authenticationError, setAuthenticationError] = useState<string | null>(null);
-  const [currentTenantSlug, setCurrentTenantSlug] = useState<string | null>(null);
+  const [authenticationError, setAuthenticationError] =
+    useState<string | null>(null);
+  const [currentTenantSlug, setCurrentTenantSlug] = useState<string | null>(
+    null,
+  );
+  const [authenticatedTenantSlug, setAuthenticatedTenantSlug] = useState<
+    string | null
+  >(null);
+  const [authenticationAttempted, setAuthenticationAttempted] = useState(false);
+  const [authenticationErrorCode, setAuthenticationErrorCode] = useState<
+    string | null
+  >(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
 
@@ -78,121 +144,251 @@ export function TelegramProvider({
 
   useEffect(() => {
     let active = true;
+    let readyCalled = false;
+    let lifecycleWebApp: TelegramWebApp | undefined;
+    let detectionResolved = false;
+    let lateInitDataHandled = false;
+    const pendingTimers = new Map<
+      ReturnType<typeof setTimeout>,
+      () => void
+    >();
+    const routeSlug = miniAppSlugForPath(
+      window.location.pathname,
+      platformMiniAppSlug,
+    );
+    setCurrentTenantSlug(routeSlug);
+    setProviderPhase("UNRESOLVED");
+    setAuthenticationError(null);
+    setAuthenticationErrorCode(null);
+    setAuthenticationAttempted(false);
+    setAuthenticated(false);
+    setAuthenticatedTenantSlug(null);
+
+    const inspect = () => {
+      const snapshot = inspectTelegramRuntime();
+      const webApp = telegramWindow().Telegram?.WebApp;
+      if (webApp && !readyCalled) {
+        webApp.ready();
+        webApp.expand();
+        readyCalled = true;
+      }
+      if (webApp && lifecycleWebApp !== webApp) {
+        lifecycleWebApp?.offEvent?.("viewportChanged", lifecycleCheck);
+        lifecycleWebApp?.offEvent?.("themeChanged", lifecycleCheck);
+        webApp.onEvent?.("viewportChanged", lifecycleCheck);
+        webApp.onEvent?.("themeChanged", lifecycleCheck);
+        lifecycleWebApp = webApp;
+      }
+      if (active) setRuntime(snapshot);
+      return snapshot;
+    };
+    const wait = (milliseconds: number) =>
+      new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          pendingTimers.delete(timer);
+          resolve();
+        }, milliseconds);
+        pendingTimers.set(timer, resolve);
+      });
+    const lifecycleCheck = () => {
+      if (!active) return;
+      const snapshot = inspect();
+      if (
+        detectionResolved &&
+        snapshot.signedInitDataPresent &&
+        !lateInitDataHandled
+      ) {
+        lateInitDataHandled = true;
+        setRetryNonce((value) => value + 1);
+      }
+    };
+    window.addEventListener("focus", lifecycleCheck);
+    window.addEventListener("pageshow", lifecycleCheck);
+    document.addEventListener("visibilitychange", lifecycleCheck);
     void (async () => {
-      const webApp = (
-        window as Window & {
-          Telegram?: {
-            WebApp?: {
-              ready(): void;
-              expand(): void;
-              initData?: string;
-              initDataUnsafe?: {
-                user?: {
-                  id: number;
-                  first_name: string;
-                  last_name?: string;
-                  username?: string;
-                  photo_url?: string;
-                };
-              };
-            };
-          };
-        }
-      ).Telegram?.WebApp;
-      webApp?.ready();
-      webApp?.expand();
-      const signedInitData = webApp?.initData;
-      const hasSignedInitData = Boolean(signedInitData);
+      const detected = await detectTelegramRuntime({ inspect, wait });
+      if (!active) return;
+      detectionResolved = true;
+      lateInitDataHandled = detected.signedInitDataPresent;
+      const webApp = telegramWindow().Telegram?.WebApp;
       const raw = webApp?.initDataUnsafe?.user;
-      const routeSlug = miniAppSlugForPath(window.location.pathname, platformMiniAppSlug);
-      if (active) {
-        setTelegramSdkPresent(Boolean(webApp));
-        setSignedInitDataPresent(hasSignedInitData);
-        setIsTelegram(hasSignedInitData);
-        setCurrentTenantSlug(routeSlug);
-        setAuthenticationError(null);
-        setAuthenticationStatus(hasSignedInitData ? "AUTHENTICATING" : "BROWSER");
-        if (raw)
-          setUser({
-            id: raw.id,
-            firstName: raw.first_name,
-            lastName: raw.last_name,
-            username: raw.username,
-            avatar: raw.photo_url,
-          });
-      }
-      const launchSlug = routeSlug;
-      let response = await fetch("/api/auth/session", { cache: "no-store" });
-      let sessionMatchesLaunch = false;
-      if (response.ok) {
-        const current = (await response.clone().json()) as {
+      if (raw)
+        setUser({
+          id: raw.id,
+          firstName: raw.first_name,
+          lastName: raw.last_name,
+          username: raw.username,
+          avatar: raw.photo_url,
+        });
+
+      let sessionResponse = await fetch("/api/auth/session", {
+        cache: "no-store",
+      });
+      let sessionTenantSlug: string | null = null;
+      if (sessionResponse.ok) {
+        const session = (await sessionResponse.json().catch(() => null)) as {
           miniApp?: { slug?: string };
-        };
-        sessionMatchesLaunch = current.miniApp?.slug === launchSlug;
+        } | null;
+        sessionTenantSlug = session?.miniApp?.slug ?? null;
       }
-      if ((!response.ok || !sessionMatchesLaunch) && hasSignedInitData) {
-        response = await fetch("/api/auth/telegram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            initData: signedInitData,
-            miniAppSlug: launchSlug,
-          }),
-        });
-        sessionMatchesLaunch = response.ok;
-      }
-      if (active && response.ok && sessionMatchesLaunch) {
-        setAuthenticated(true);
-        setAuthenticationStatus("AUTHENTICATED");
-        await refreshDashboard();
-      } else if (active) {
-        const preview = await fetch("/api/dev/preview/context", {
-          cache: "no-store",
-        });
-        if (preview.ok) {
-          const context = (await preview.json()) as {
-            dashboard: DashboardData;
-          };
+
+      if (!detected.signedInitDataPresent) {
+        if (!active) return;
+        if (sessionResponse.ok && sessionTenantSlug === routeSlug) {
           setAuthenticated(true);
-          setDashboard(context.dashboard);
-          setUser(context.dashboard.user);
-          setAuthenticationStatus("AUTHENTICATED");
-        } else if (hasSignedInitData) {
-          setAuthenticated(false);
-          setAuthenticationStatus("FAILED");
-          setAuthenticationError("Telegram authentication could not be completed for this Mini App.");
+          setAuthenticatedTenantSlug(routeSlug);
+          await refreshDashboard();
         } else {
-          setAuthenticationStatus("BROWSER");
+          const preview = await fetch("/api/dev/preview/context", {
+            cache: "no-store",
+          });
+          if (preview.ok) {
+            const context = (await preview.json()) as {
+              dashboard: DashboardData;
+            };
+            setAuthenticated(true);
+            setDashboard(context.dashboard);
+            setUser(context.dashboard.user);
+          }
         }
+        if (active) setProviderPhase("BROWSER");
+        return;
       }
-      if (active) setReady(true);
-    })();
+
+      if (sessionTenantSlug === routeSlug) {
+        setAuthenticated(true);
+        setAuthenticatedTenantSlug(routeSlug);
+        setProviderPhase("TELEGRAM_AUTHENTICATED");
+        await refreshDashboard();
+        return;
+      }
+      if (sessionTenantSlug && sessionTenantSlug !== routeSlug)
+        setProviderPhase("TENANT_MISMATCH");
+      else setProviderPhase("TELEGRAM_AUTHENTICATING");
+
+      setAuthenticationAttempted(true);
+      const authResponse = await fetch("/api/auth/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: detected.initData,
+          miniAppSlug: routeSlug,
+        }),
+      });
+      if (!active) return;
+      if (!authResponse.ok) {
+        setProviderPhase("TELEGRAM_FAILED");
+        setAuthenticationError(
+          "Telegram authentication could not be completed.",
+        );
+        setAuthenticationErrorCode(`AUTH_HTTP_${authResponse.status}`);
+        return;
+      }
+      const authenticatedResponse = (await authResponse
+        .json()
+        .catch(() => null)) as { miniApp?: { slug?: string } } | null;
+      if (authenticatedResponse?.miniApp?.slug !== routeSlug) {
+        setProviderPhase("TENANT_MISMATCH");
+        setAuthenticationError(
+          "Telegram authentication returned a different Mini App tenant.",
+        );
+        setAuthenticationErrorCode("AUTH_TENANT_MISMATCH");
+        return;
+      }
+
+      sessionResponse = await fetch("/api/auth/session", {
+        cache: "no-store",
+      });
+      const verifiedSession = sessionResponse.ok
+        ? ((await sessionResponse.json().catch(() => null)) as {
+            miniApp?: { slug?: string };
+          } | null)
+        : null;
+      if (verifiedSession?.miniApp?.slug !== routeSlug) {
+        setProviderPhase("TENANT_MISMATCH");
+        setAuthenticationError(
+          "The authenticated session does not match this Mini App.",
+        );
+        setAuthenticationErrorCode("SESSION_TENANT_MISMATCH");
+        return;
+      }
+      setAuthenticated(true);
+      setAuthenticatedTenantSlug(routeSlug);
+      setProviderPhase("TELEGRAM_AUTHENTICATED");
+      await refreshDashboard();
+    })().catch(() => {
+      if (!active) return;
+      setProviderPhase("TELEGRAM_FAILED");
+      setAuthenticationError("Telegram authentication could not be completed.");
+      setAuthenticationErrorCode("AUTH_RUNTIME_ERROR");
+    });
+
     return () => {
       active = false;
+      for (const [timer, resolve] of pendingTimers) {
+        clearTimeout(timer);
+        resolve();
+      }
+      pendingTimers.clear();
+      window.removeEventListener("focus", lifecycleCheck);
+      window.removeEventListener("pageshow", lifecycleCheck);
+      document.removeEventListener("visibilitychange", lifecycleCheck);
+      lifecycleWebApp?.offEvent?.("viewportChanged", lifecycleCheck);
+      lifecycleWebApp?.offEvent?.("themeChanged", lifecycleCheck);
     };
   }, [platformMiniAppSlug, refreshDashboard, retryNonce]);
 
-  const value = useMemo(
+  const diagnostics = useMemo<TelegramRuntimeDiagnostics>(
+    () => ({
+      sdkDetected: runtime.sdkDetected,
+      webAppDetected: runtime.webAppDetected,
+      signedInitDataPresent: runtime.signedInitDataPresent,
+      initDataLength: runtime.initDataLength,
+      startParamPresent: runtime.startParamPresent,
+      routeTenantSlug: currentTenantSlug ?? "",
+      providerPhase,
+      authenticationAttempted,
+      authenticatedTenantSlug,
+      authenticationErrorCode,
+    }),
+    [
+      runtime,
+      currentTenantSlug,
+      providerPhase,
+      authenticationAttempted,
+      authenticatedTenantSlug,
+      authenticationErrorCode,
+    ],
+  );
+  const value = useMemo<TelegramContextValue>(
     () => ({
       user,
-      isTelegram,
-      telegramSdkPresent,
-      signedInitDataPresent,
-      ready,
+      isTelegram: runtime.signedInitDataPresent,
+      telegramSdkPresent: runtime.sdkDetected,
+      signedInitDataPresent: runtime.signedInitDataPresent,
+      ready: providerPhase !== "UNRESOLVED",
       authenticated,
-      authenticationStatus,
+      providerPhase,
       authenticationError,
       currentTenantSlug,
+      authenticatedTenantSlug,
+      diagnostics,
       dashboard,
-      retryAuthentication: () => {
-        setReady(false);
-        setAuthenticationStatus("DETECTING");
-        setAuthenticationError(null);
-        setRetryNonce((value) => value + 1);
-      },
+      retryAuthentication: () => setRetryNonce((value) => value + 1),
       refreshDashboard,
     }),
-    [user, isTelegram, telegramSdkPresent, signedInitDataPresent, ready, authenticated, authenticationStatus, authenticationError, currentTenantSlug, dashboard, refreshDashboard],
+    [
+      user,
+      runtime,
+      providerPhase,
+      authenticated,
+      authenticationError,
+      currentTenantSlug,
+      authenticatedTenantSlug,
+      diagnostics,
+      dashboard,
+      refreshDashboard,
+    ],
   );
   return (
     <TelegramContext.Provider value={value}>

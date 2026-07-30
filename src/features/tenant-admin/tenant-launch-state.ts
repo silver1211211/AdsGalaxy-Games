@@ -1,30 +1,20 @@
 export function tenantLaunchDecision(input: {
-  ready: boolean;
-  signedInitDataPresent: boolean;
-  authenticationStatus:
-    | "DETECTING"
+  providerPhase:
+    | "UNRESOLVED"
     | "BROWSER"
-    | "AUTHENTICATING"
-    | "AUTHENTICATED"
-    | "FAILED";
-  authenticated: boolean;
-  currentTenantSlug: string | null;
-  tenantSlug: string;
+    | "TELEGRAM_AUTHENTICATING"
+    | "TELEGRAM_AUTHENTICATED"
+    | "TELEGRAM_FAILED"
+    | "TENANT_MISMATCH";
   botConfigured: boolean;
 }) {
-  if (!input.ready || input.authenticationStatus === "DETECTING")
-    return input.signedInitDataPresent ? "AUTHENTICATING" : "DETECTING";
-  if (input.signedInitDataPresent) {
-    if (
-      input.authenticationStatus === "AUTHENTICATED" &&
-      input.authenticated &&
-      input.currentTenantSlug === input.tenantSlug
-    )
-      return "AUTHENTICATED";
-    if (input.authenticationStatus === "AUTHENTICATING")
-      return "AUTHENTICATING";
-    return "FAILED";
-  }
+  if (input.providerPhase === "UNRESOLVED") return "UNRESOLVED";
+  if (input.providerPhase === "TELEGRAM_AUTHENTICATING")
+    return "AUTHENTICATING";
+  if (input.providerPhase === "TELEGRAM_AUTHENTICATED")
+    return "AUTHENTICATED";
+  if (input.providerPhase === "TELEGRAM_FAILED") return "FAILED";
+  if (input.providerPhase === "TENANT_MISMATCH") return "MISMATCH";
   return input.botConfigured
     ? "BROWSER_CONFIGURED"
     : "BROWSER_UNCONFIGURED";

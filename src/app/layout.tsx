@@ -4,6 +4,7 @@ import "./globals.css";
 import { TelegramProvider } from "@/components/providers/telegram-provider";
 import { OfflineBanner } from "@/components/system/offline-banner";
 import { DevelopmentSessionBanner } from "@/components/dev/development-session-banner";
+import Script from "next/script";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -46,6 +47,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={manrope.variable}>
       <body>
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
         <TelegramProvider
           platformMiniAppSlug={
             process.env.PLATFORM_MINI_APP_SLUG ?? "ads-galaxy"
