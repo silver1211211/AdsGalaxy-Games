@@ -86,7 +86,7 @@ export async function requireTenantAdminPageIdentity(tenantSlug: string) {
   if (!tenant) notFound();
   if (tenant.status !== "ACTIVE") redirect(`/${tenantSlug}`);
   const session = await getSession();
-  if (!session) redirect(`/${tenantSlug}/administrator-login`);
+  if (!session) redirect(`/${tenantSlug}/admin/login`);
   const membership = await prisma.miniAppMembership.findFirst({
     where: {
       id: session.membershipId,
@@ -99,12 +99,12 @@ export async function requireTenantAdminPageIdentity(tenantSlug: string) {
     include: { miniApp: true, user: true },
   });
   if (tenantAdminPageDecision({ session, tenantId: tenant.id, membership }) !== "ALLOW")
-    redirect(`/${tenantSlug}`);
+    redirect(`/${tenantSlug}/admin/login`);
   if (!membership) redirect(`/${tenantSlug}`);
   const credential = await prisma.adminCredential.findUnique({
     where: { userId_scopeType: { userId: session.userId, scopeType: "TENANT_ADMIN" } },
     select: { id: true },
   });
-  if (!credential) redirect(`/${tenantSlug}/administrator-login`);
+  if (!credential) redirect(`/${tenantSlug}/admin/login`);
   return { ...session, membership, miniApp: membership.miniApp };
 }

@@ -9,7 +9,7 @@ export function TenantAdminLogoutButton({ tenantSlug }: { tenantSlug: string }) 
       body: "{}",
     });
     const body = await response.json().catch(() => null) as { redirect?: string } | null;
-    location.assign(response.ok && body?.redirect ? body.redirect : `/${tenantSlug}/administrator-login`);
+    location.assign(response.ok && body?.redirect ? body.redirect : `/${tenantSlug}/admin/login`);
   }
   return <button type="button" onClick={() => void logout()} className="game-icon-button" aria-label="Administrator logout"><LogOut size={17} /></button>;
 }

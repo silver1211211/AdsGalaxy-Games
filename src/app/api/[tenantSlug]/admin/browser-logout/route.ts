@@ -11,7 +11,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ten
     await revokeTenantAdministratorSession({
       sessionId: auth.sessionId, userId: auth.userId, miniAppId: auth.miniAppId,
     });
-    const response = Response.json({ loggedOut: true, redirect: `/${tenantSlug}/administrator-login` });
+    const response = Response.json({ loggedOut: true, redirect: `/${tenantSlug}/admin/login` });
     response.headers.append(
       "Set-Cookie",
       `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,

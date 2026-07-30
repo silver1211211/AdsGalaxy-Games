@@ -73,9 +73,22 @@ export function superAdminPageAuthorizationDecision(
 ) {
   if (!session) return "LOGIN" as const;
   if (session.source === "DEVELOPMENT" && !developmentHostAllowed)
-    return "HOME" as const;
-  if (session.role !== "SUPER_ADMIN") return "HOME" as const;
+    return "LOGIN" as const;
+  if (session.role !== "SUPER_ADMIN") return "LOGIN" as const;
   return "ALLOW" as const;
+}
+
+export function superAdminPlatformBindingDecision(
+  session: PageSession,
+  platformSlug: string,
+  credentialExists: boolean,
+) {
+  return session.role === "SUPER_ADMIN" &&
+    session.miniApp.slug === platformSlug &&
+    session.miniApp.status === "ACTIVE" &&
+    credentialExists
+    ? "ALLOW" as const
+    : "LOGIN" as const;
 }
 
 export async function requireSuperAdminBrowserPageIdentity() {
@@ -86,7 +99,18 @@ export async function requireSuperAdminBrowserPageIdentity() {
     developmentAuthAllowed(host),
   );
   if (decision === "LOGIN") redirect("/super-admin-login");
-  if (decision === "HOME") redirect("/");
   if (!session) redirect("/super-admin-login");
+  const platformSlug = process.env.PLATFORM_MINI_APP_SLUG ?? "ads-galaxy";
+  const credential = await prisma.adminCredential.findUnique({
+    where: {
+      userId_scopeType: {
+        userId: session.userId,
+        scopeType: "SUPER_ADMIN",
+      },
+    },
+    select: { id: true },
+  });
+  if (superAdminPlatformBindingDecision(session, platformSlug, Boolean(credential)) !== "ALLOW")
+    redirect("/super-admin-login");
   return session;
 }

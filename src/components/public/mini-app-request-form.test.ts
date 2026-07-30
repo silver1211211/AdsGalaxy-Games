@@ -16,10 +16,12 @@ describe("public Mini App request form surface", () => {
     expect(source).not.toContain("AdsGalaxyBot");
     expect(source).not.toContain("Contact method");
   });
-  it("renders both live URL previews and keeps intended audience", () => {
+  it("renders all three distinctly labelled live URL previews", () => {
     expect(source).toContain("Public Mini App URL:");
-    expect(source).toContain("Administrator URL:");
-    expect(source).toContain("${publicUrl}/admin");
+    expect(source).toContain("Administrator Login URL:");
+    expect(source).toContain("Administrator Dashboard URL:");
+    expect(source).not.toContain("<b>Administrator URL:</b>");
+    expect(source).toContain("tenantUrls(");
     expect(source).toContain("Intended audience");
   });
   it("defaults both audience counts to zero and keeps all agreements mandatory", () => {

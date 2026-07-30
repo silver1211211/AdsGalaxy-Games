@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { PlatformPopup } from "@/components/system/platform-popup";
+import { readClientApiError } from "@/lib/client-api-error";
 type Config = {
   configured: boolean;
   tokenMasked?: string;
@@ -12,13 +14,17 @@ export function BotSettingsForm({ tenantSlug }: { tenantSlug: string }) {
   const [token, setToken] = useState(""),
     [confirmed, setConfirmed] = useState(false),
     [current, setCurrent] = useState<Config | null>(null),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [popup, setPopup] = useState<string | null>(null);
   useEffect(() => {
-    fetch(`/api/${tenantSlug}/admin/settings/telegram-bot`, {
+    void fetch(`/api/${tenantSlug}/admin/settings/telegram-bot`, {
       cache: "no-store",
     })
-      .then((r) => r.json())
-      .then(setCurrent)
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error((await readClientApiError(response, "Could not load bot status.")).error);
+        setCurrent(await response.json());
+      })
       .catch(() => setMessage("Could not load bot status."));
   }, [tenantSlug]);
   async function save() {
@@ -28,15 +34,19 @@ export function BotSettingsForm({ tenantSlug }: { tenantSlug: string }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
-      }),
-      x = await r.json();
+      });
     if (r.ok) {
+      const x = await r.json();
       setCurrent(x);
       setToken("");
       setMessage(
         "Bot connected. The encrypted token cannot be changed by an Admin.",
       );
-    } else setMessage(x.error ?? "Could not configure bot.");
+    } else {
+      const apiError = await readClientApiError(r, "Could not configure bot.");
+      setMessage("");
+      setPopup(apiError.error);
+    }
   }
   if (!current)
     return <div className="h-52 animate-pulse rounded-3xl bg-white" />;
@@ -117,6 +127,7 @@ export function BotSettingsForm({ tenantSlug }: { tenantSlug: string }) {
       <p aria-live="polite" className="mt-3 text-xs font-bold text-teal-700">
         {message}
       </p>
+      {popup && <PlatformPopup title="Bot not connected" message={popup} dismissible onClose={()=>setPopup(null)} primary={{label:"Review bot settings",onClick:()=>setPopup(null)}}/>}
     </section>
   );
 }

@@ -35,9 +35,15 @@ export type DashboardData = {
 type TelegramContextValue = {
   user: TelegramUser;
   isTelegram: boolean;
+  telegramSdkPresent: boolean;
+  signedInitDataPresent: boolean;
   ready: boolean;
   authenticated: boolean;
+  authenticationStatus: "DETECTING" | "BROWSER" | "AUTHENTICATING" | "AUTHENTICATED" | "FAILED";
+  authenticationError: string | null;
+  currentTenantSlug: string | null;
   dashboard: DashboardData | null;
+  retryAuthentication(): void;
   refreshDashboard(): Promise<void>;
 };
 const TelegramContext = createContext<TelegramContextValue | null>(null);
@@ -52,8 +58,14 @@ export function TelegramProvider({
 }) {
   const [user, setUser] = useState<TelegramUser>(fallbackUser);
   const [isTelegram, setIsTelegram] = useState(false);
+  const [telegramSdkPresent, setTelegramSdkPresent] = useState(false);
+  const [signedInitDataPresent, setSignedInitDataPresent] = useState(false);
   const [ready, setReady] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authenticationStatus, setAuthenticationStatus] = useState<TelegramContextValue["authenticationStatus"]>("DETECTING");
+  const [authenticationError, setAuthenticationError] = useState<string | null>(null);
+  const [currentTenantSlug, setCurrentTenantSlug] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
 
   const refreshDashboard = useCallback(async () => {
@@ -89,9 +101,17 @@ export function TelegramProvider({
       ).Telegram?.WebApp;
       webApp?.ready();
       webApp?.expand();
+      const signedInitData = webApp?.initData;
+      const hasSignedInitData = Boolean(signedInitData);
       const raw = webApp?.initDataUnsafe?.user;
+      const routeSlug = miniAppSlugForPath(window.location.pathname, platformMiniAppSlug);
       if (active) {
-        setIsTelegram(Boolean(webApp && raw));
+        setTelegramSdkPresent(Boolean(webApp));
+        setSignedInitDataPresent(hasSignedInitData);
+        setIsTelegram(hasSignedInitData);
+        setCurrentTenantSlug(routeSlug);
+        setAuthenticationError(null);
+        setAuthenticationStatus(hasSignedInitData ? "AUTHENTICATING" : "BROWSER");
         if (raw)
           setUser({
             id: raw.id,
@@ -101,7 +121,6 @@ export function TelegramProvider({
             avatar: raw.photo_url,
           });
       }
-      const routeSlug = miniAppSlugForPath(window.location.pathname, platformMiniAppSlug);
       const launchSlug = routeSlug;
       let response = await fetch("/api/auth/session", { cache: "no-store" });
       let sessionMatchesLaunch = false;
@@ -111,12 +130,12 @@ export function TelegramProvider({
         };
         sessionMatchesLaunch = current.miniApp?.slug === launchSlug;
       }
-      if ((!response.ok || !sessionMatchesLaunch) && webApp?.initData) {
+      if ((!response.ok || !sessionMatchesLaunch) && hasSignedInitData) {
         response = await fetch("/api/auth/telegram", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            initData: webApp.initData,
+            initData: signedInitData,
             miniAppSlug: launchSlug,
           }),
         });
@@ -124,6 +143,7 @@ export function TelegramProvider({
       }
       if (active && response.ok && sessionMatchesLaunch) {
         setAuthenticated(true);
+        setAuthenticationStatus("AUTHENTICATED");
         await refreshDashboard();
       } else if (active) {
         const preview = await fetch("/api/dev/preview/context", {
@@ -136,6 +156,13 @@ export function TelegramProvider({
           setAuthenticated(true);
           setDashboard(context.dashboard);
           setUser(context.dashboard.user);
+          setAuthenticationStatus("AUTHENTICATED");
+        } else if (hasSignedInitData) {
+          setAuthenticated(false);
+          setAuthenticationStatus("FAILED");
+          setAuthenticationError("Telegram authentication could not be completed for this Mini App.");
+        } else {
+          setAuthenticationStatus("BROWSER");
         }
       }
       if (active) setReady(true);
@@ -143,18 +170,29 @@ export function TelegramProvider({
     return () => {
       active = false;
     };
-  }, [platformMiniAppSlug, refreshDashboard]);
+  }, [platformMiniAppSlug, refreshDashboard, retryNonce]);
 
   const value = useMemo(
     () => ({
       user,
       isTelegram,
+      telegramSdkPresent,
+      signedInitDataPresent,
       ready,
       authenticated,
+      authenticationStatus,
+      authenticationError,
+      currentTenantSlug,
       dashboard,
+      retryAuthentication: () => {
+        setReady(false);
+        setAuthenticationStatus("DETECTING");
+        setAuthenticationError(null);
+        setRetryNonce((value) => value + 1);
+      },
       refreshDashboard,
     }),
-    [user, isTelegram, ready, authenticated, dashboard, refreshDashboard],
+    [user, isTelegram, telegramSdkPresent, signedInitDataPresent, ready, authenticated, authenticationStatus, authenticationError, currentTenantSlug, dashboard, refreshDashboard],
   );
   return (
     <TelegramContext.Provider value={value}>

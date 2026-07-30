@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
-import { requireSuperAdmin } from "@/lib/session";
+import { getAdminElevation } from "@/features/admin-security/elevation";
+import { requireSuperAdminPageIdentity } from "@/lib/page-auth";
 
 export async function requireSuperAdminPage() {
-  try {
-    return await requireSuperAdmin();
-  } catch {
-    redirect("/super-admin-verification");
-  }
+  const session = await requireSuperAdminPageIdentity();
+  const elevation = await getAdminElevation({
+    userId: session.userId,
+    scopeType: "SUPER_ADMIN",
+    allowPasswordChange: true,
+  });
+  if (!elevation.ok) redirect("/super-admin-verification");
+  if (elevation.mustChangePassword) redirect("/super-admin-security");
+  return { ...session, adminElevation: elevation };
 }

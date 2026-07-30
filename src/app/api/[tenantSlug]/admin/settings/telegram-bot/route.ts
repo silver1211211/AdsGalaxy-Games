@@ -7,6 +7,7 @@ import { assertSameOrigin } from "@/features/profile/security";
 import { maskBotToken } from "@/features/tenant-admin/secrets";
 import { telegramWebhookSecret } from "@/features/tenant-admin/telegram-start";
 import { requireRecentAdminElevation } from "@/features/admin-security/elevation";
+import { safeApiError, zodApiError } from "@/lib/safe-api-error";
 
 const schema = z
   .object({
@@ -155,12 +156,17 @@ export async function PUT(
     });
   } catch (error) {
     if (error instanceof Response) return error;
+    if (error instanceof z.ZodError)
+      return NextResponse.json(
+        zodApiError(error, "Enter a valid Telegram bot token."),
+        { status: 422 },
+      );
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Could not configure bot",
-      },
-      { status: 422 },
+      safeApiError(
+        "The bot could not be configured. Try again.",
+        "BOT_CONFIGURATION_FAILED",
+      ),
+      { status: 500 },
     );
   }
 }

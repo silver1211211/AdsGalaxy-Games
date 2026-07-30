@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ten
     return Response.json(await authenticateTenantAdministrator({ tenantSlug, password: input.password, request }));
   } catch (error) {
     if (error instanceof Response)
-      return Response.json({ error: error.status === 429 ? "Too many login attempts. Try again later." : "Request could not be verified." }, { status: error.status });
-    return Response.json({ error: TENANT_ADMIN_LOGIN_ERROR }, { status: 401 });
+      return Response.json({ error: error.status === 429 ? "Too many login attempts. Try again later." : "Request could not be verified.", code: error.status === 429 ? "RATE_LIMITED" : "REQUEST_REJECTED" }, { status: error.status });
+    return Response.json({ error: TENANT_ADMIN_LOGIN_ERROR, code: "INVALID_CREDENTIALS" }, { status: 401 });
   }
 }

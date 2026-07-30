@@ -32,13 +32,13 @@ export function tenantAdminPageDecision(input: {
   membership?: { id: string; miniAppId: string; role: string; status: string } | null;
 }) {
   if (!input.session) return "LOGIN" as const;
-  if (!["ADMIN", "SUPER_ADMIN"].includes(input.session.role)) return "TENANT" as const;
-  if (input.session.miniAppId !== input.tenantId) return "TENANT" as const;
+  if (!["ADMIN", "SUPER_ADMIN"].includes(input.session.role)) return "LOGIN" as const;
+  if (input.session.miniAppId !== input.tenantId) return "LOGIN" as const;
   if (!input.membership || !tenantAccessAllowed({
     sessionMiniAppId: input.session.miniAppId,
     sessionMembershipId: input.session.membershipId,
     membership: input.membership,
-  })) return "TENANT" as const;
+  })) return "LOGIN" as const;
   return "ALLOW" as const;
 }
 

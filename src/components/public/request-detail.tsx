@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { tenantUrls } from "@/lib/tenant-urls";
 import Link from "next/link";
 import { Check, Copy, KeyRound, ShieldAlert } from "lucide-react";
 
@@ -71,7 +72,7 @@ export function RequestDetail({ item }: { item: RequestItem }) {
         </div>}
         {viewed && !temporaryPassword && <p className="mt-4 rounded-2xl bg-white p-4 text-sm font-bold">Temporary password already viewed or an existing Administrator password is configured.</p>}
         <div className="mt-4 flex gap-2 rounded-2xl bg-amber-50 p-4 text-xs leading-5 text-amber-950"><ShieldAlert className="shrink-0" size={18} /><p>You must change a temporary password before managing your Mini App. If it was lost, a Super Admin must issue a reset after identity verification.</p></div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2"><Link href={`/${item.createdMiniApp.slug}`} className="game-primary">Open Mini App</Link><Link href={`/${item.createdMiniApp.slug}/admin`} className="game-secondary">Open Admin</Link></div>
+        <TenantRequestUrls slug={item.createdMiniApp.slug} />
       </section>}
     </section>
     <section className="rounded-3xl bg-white p-6 shadow-card">
@@ -80,5 +81,14 @@ export function RequestDetail({ item }: { item: RequestItem }) {
       {item.status === "INFORMATION_REQUIRED" && <div className="mt-5"><textarea value={message} onChange={(event) => setMessage(event.target.value)} className="min-h-32 w-full rounded-2xl border p-4" placeholder="Provide the requested information" /><button onClick={() => void send()} className="game-primary mt-3">Send Response</button></div>}
       <p aria-live="polite" className="mt-2 text-xs font-bold text-coral-600">{status}</p>
     </section>
+  </div>;
+}
+
+function TenantRequestUrls({ slug }: { slug: string }) {
+  const urls = tenantUrls(slug);
+  return <div className="mt-4 grid gap-2">
+    <a href={urls.public} className="game-primary">Public Mini App URL</a>
+    <a href={urls.administratorLogin} className="game-secondary">Administrator Login URL</a>
+    <a href={urls.administratorDashboard} className="game-secondary">Administrator Dashboard URL</a>
   </div>;
 }

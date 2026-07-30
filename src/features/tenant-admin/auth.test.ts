@@ -23,8 +23,8 @@ describe("tenant Admin boundary", () => {
   it("routes unauthenticated and cross-tenant sessions safely", () => {
     const membership = { id: "m", miniAppId: "silver-id", role: "ADMIN", status: "ACTIVE" };
     expect(tenantAdminPageDecision({ session: null, tenantId: "silver-id" })).toBe("LOGIN");
-    expect(tenantAdminPageDecision({ session: { role: "USER", miniAppId: "silver-id", membershipId: "m" }, tenantId: "silver-id", membership })).toBe("TENANT");
-    expect(tenantAdminPageDecision({ session: { role: "ADMIN", miniAppId: "other-id", membershipId: "m" }, tenantId: "silver-id", membership })).toBe("TENANT");
+    expect(tenantAdminPageDecision({ session: { role: "USER", miniAppId: "silver-id", membershipId: "m" }, tenantId: "silver-id", membership })).toBe("LOGIN");
+    expect(tenantAdminPageDecision({ session: { role: "ADMIN", miniAppId: "other-id", membershipId: "m" }, tenantId: "silver-id", membership })).toBe("LOGIN");
     expect(tenantAdminPageDecision({ session: { role: "ADMIN", miniAppId: "silver-id", membershipId: "m" }, tenantId: "silver-id", membership })).toBe("ALLOW");
   });
   it("derives Telegram authentication from the current tenant URL", () => {

@@ -13,6 +13,7 @@ import {
   REQUEST_DEVICE_COOKIE,
   REQUEST_DEVICE_MAX_AGE,
 } from "@/features/mini-app-requests/device";
+import { zodApiError } from "@/lib/safe-api-error";
 
 export async function POST(request: Request) {
   try {
@@ -51,17 +52,18 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) return error;
     if (error instanceof z.ZodError)
-      return Response.json({ error: error.issues[0]?.message ?? "Invalid request.", code: "INVALID_INPUT" }, { status: 422 });
+      return Response.json(zodApiError(error, "Review the request fields."), { status: 422 });
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
       return Response.json({ error: "That Mini App path is already reserved.", code: "CONFLICT" }, { status: 409 });
     const message = error instanceof Error ? error.message : "";
-    const map: Record<string, string> = {
-      INVALID_SLUG: "Choose a valid available Mini App path.",
-      ACTIVE_REQUEST_EXISTS: "This device or Telegram account already has an active Mini App request.",
-      SLUG_UNAVAILABLE: "That Mini App path is unavailable.",
-      APPLICANT_UNAVAILABLE: "Your account cannot submit a request.",
+    const map: Record<string, { error: string; code: string }> = {
+      INVALID_SLUG: { error: "Choose a valid available Mini App path.", code: "INVALID_SLUG" },
+      ACTIVE_REQUEST_EXISTS: { error: "This device or Telegram account already has an active Mini App request.", code: "ACTIVE_REQUEST_EXISTS" },
+      SLUG_UNAVAILABLE: { error: "That Mini App path is unavailable.", code: "SLUG_UNAVAILABLE" },
+      APPLICANT_UNAVAILABLE: { error: "Your account cannot submit a request.", code: "APPLICANT_UNAVAILABLE" },
     };
-    return Response.json({ error: map[message] ?? "Could not submit request.", code: message || "INTERNAL_ERROR" }, { status: message === "ACTIVE_REQUEST_EXISTS" || message === "SLUG_UNAVAILABLE" ? 409 : 422 });
+    const safe = map[message] ?? { error: "Could not submit request.", code: "REQUEST_SUBMISSION_FAILED" };
+    return Response.json(safe, { status: message === "ACTIVE_REQUEST_EXISTS" || message === "SLUG_UNAVAILABLE" ? 409 : 422 });
   }
 }
 

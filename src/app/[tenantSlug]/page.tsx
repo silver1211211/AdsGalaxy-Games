@@ -5,6 +5,7 @@ import { Gamepad2, ListChecks, WalletCards } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isValidTenantSlug, telegramLaunchUrl } from "@/features/tenant-admin/boundary";
 import { tenantPublicState } from "@/features/tenant-admin/tenant-launch";
+import { TenantLaunchPanel } from "@/components/public/tenant-launch-panel";
 
 async function tenant(slug: string) {
   if (!isValidTenantSlug(slug)) return null;
@@ -54,9 +55,7 @@ export default async function TenantMiniApp({ params }: { params: Promise<{ tena
       <p className="text-xs font-black uppercase tracking-[.2em] text-teal-300">Tenant Mini App</p>
       <h1 className="mt-2 text-4xl font-black sm:text-5xl">{item.name}</h1>
       <p className="mt-4 max-w-2xl leading-7 text-white/70">{item.adminSettings?.startMessage ?? item.adminSettings?.description ?? `Welcome to ${item.name}. Open securely through its configured Telegram bot to play and earn.`}</p>
-      {launchUrl
-        ? <a href={launchUrl} className="game-primary mt-6">Open in Telegram</a>
-        : <p className="mt-6 rounded-xl bg-white/10 p-4 text-sm font-bold">Telegram access has not yet been configured for this Mini App.</p>}
+      <TenantLaunchPanel tenantSlug={item.slug} launchUrl={launchUrl} />
     </header>
     <section className="mt-6 grid gap-4 sm:grid-cols-3">
       <TenantFeature icon={Gamepad2} title="Games" detail={`${enabledGames} configured game${enabledGames === 1 ? "" : "s"}`} href="/games" />

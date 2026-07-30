@@ -11,7 +11,9 @@ describe("public tenant page implementation", () => {
   it("uses the public image endpoint and safe missing-bot state", () => {
     expect(source).toContain("/api/tenants/");
     expect(source).not.toContain(";base64,");
-    expect(source).toContain("Telegram access has not yet been configured");
+    const launchPanel = readFileSync("src/components/public/tenant-launch-panel.tsx", "utf8");
+    expect(source).toContain("TenantLaunchPanel");
+    expect(launchPanel).toContain("Telegram access has not yet been configured");
   });
   it("loads tenant branding and tenant feature settings", () => {
     for (const field of ["logoUrl", "startMessage", "startImageKey", "gameSettings", "taskSettings", "walletSettings", "adConfiguration"])

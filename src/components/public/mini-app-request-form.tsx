@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PlatformPopup } from "@/components/system/platform-popup";
+import { tenantUrls } from "@/lib/tenant-urls";
+import { readClientApiError } from "@/lib/client-api-error";
 
 type Availability = { available: boolean; status: string; slug: string };
 const categories = ["COMMUNITY","ENTERTAINMENT","EDUCATION","BUSINESS","CREATOR","GAMING","OTHER"];
@@ -35,8 +37,9 @@ export function MiniAppRequestForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(recovery ? { recoveryIdentifier: recovery } : {}),
         });
+        if (!response.ok)
+          throw new Error((await readClientApiError(response, "Device verification failed.")).error);
         const body = await response.json();
-        if (!response.ok) throw new Error(body.error ?? "Device verification failed.");
         localStorage.setItem("ag_request_device", body.identifier);
         setDeviceReady(true);
       } catch {
@@ -45,9 +48,10 @@ export function MiniAppRequestForm() {
     })();
   }, []);
 
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://games.adsgalaxy.online").replace(/\/$/, "");
-  const publicUrl = useMemo(() => `${baseUrl}/${form.requestedSlug || "your-path"}`, [baseUrl, form.requestedSlug]);
-  const adminUrl = `${publicUrl}/admin`;
+  const urls = useMemo(
+    () => tenantUrls(form.requestedSlug || "your-path"),
+    [form.requestedSlug],
+  );
   const set = (key: string, value: string | number | boolean) => setForm((current) => ({ ...current, [key]: value }));
 
   async function checkSlug(value: string) {
@@ -114,12 +118,13 @@ export function MiniAppRequestForm() {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const body = await response.json();
       if (!response.ok) {
+        const apiError = await readClientApiError(response, "Review the form and try again.");
         const title = response.status === 409 ? "Request already active" : response.status === 429 ? "Too many requests" : "Request could not be submitted";
-        setPopup({ title, message: body.error ?? "Review the form and try again." });
+        setPopup({ title, message: apiError.error });
         return;
       }
+      const body = await response.json().catch(() => null) as any;
       setSubmitted(body);
     } catch {
       setPopup({ title: "Network error", message: "The request could not reach Ads Galaxy. Check your connection and try again." });
@@ -144,11 +149,11 @@ export function MiniAppRequestForm() {
           <Field label="Proposed Mini App name" value={form.proposedName} change={(value) => set("proposedName", value)} minLength={3} maxLength={100} required />
           <label className="grid gap-1 font-bold">Primary category<select required value={form.category} onChange={(event) => set("category", event.target.value)} className="min-h-12 rounded-xl border bg-white px-3">{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
           <Field label="Preferred Mini App path" value={form.requestedSlug} change={(value) => void checkSlug(value)} minLength={5} maxLength={40} required />
-          <div className="rounded-xl bg-warm-50 p-3"><p className={`font-black ${availability?.available ? "text-teal-700" : "text-coral-600"}`}>{statusLabel}</p><p className="mt-2 break-all text-sm"><b>Public Mini App URL:</b><br />{publicUrl}</p><p className="mt-2 break-all text-sm"><b>Administrator URL:</b><br />{adminUrl}</p></div>
+          <div className="rounded-xl bg-warm-50 p-3"><p className={`font-black ${availability?.available ? "text-teal-700" : "text-coral-600"}`}>{statusLabel}</p><p className="mt-2 break-all text-sm"><b>Public Mini App URL:</b><br />{urls.public}</p><p className="mt-2 break-all text-sm"><b>Administrator Login URL:</b><br />{urls.administratorLogin}</p><p className="mt-2 break-all text-sm"><b>Administrator Dashboard URL:</b><br />{urls.administratorDashboard}</p></div>
           <Area label="Short description" value={form.description} change={(value) => set("description", value)} minLength={30} maxLength={500} />
           <div><Area label="Intended audience" value={form.intendedAudience} change={(value) => set("intendedAudience", value)} minLength={20} maxLength={500} /><p className="mt-2 text-xs text-warm-500">Describe the type of users or community you expect to use this Mini App.</p></div>
         </div>
-        <Help>This becomes your public Mini App address after approval. After approval, the assigned Administrator will use the secure Administrator URL to manage the Mini App.</Help>
+        <Help>These addresses are reserved after approval. Administrators sign in through the login URL, then use the separate authenticated dashboard URL.</Help>
       </Section>
       <Section title="C. Promotion plan">
         <div className="grid gap-3 sm:grid-cols-2">

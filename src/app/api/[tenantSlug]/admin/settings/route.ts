@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireTenantAdmin } from "@/features/tenant-admin/auth";
 import { prisma } from "@/lib/prisma";
 import { assertSameOrigin, rateLimit } from "@/features/profile/security";
+import { safeApiError, zodApiError } from "@/lib/safe-api-error";
 const button = z
   .object({
     id: z.string().uuid(),
@@ -114,12 +115,11 @@ export async function PUT(
     return NextResponse.json(output(saved));
   } catch (e) {
     if (e instanceof Response) return e;
+    if (e instanceof z.ZodError)
+      return NextResponse.json(zodApiError(e), { status: 422 });
     return NextResponse.json(
-      {
-        error: e instanceof Error ? e.message : "Could not save settings",
-        code: "INVALID_MAINTENANCE_SETTINGS",
-      },
-      { status: 422 },
+      safeApiError("Settings could not be saved. Try again.", "SETTINGS_SAVE_FAILED"),
+      { status: 500 },
     );
   }
 }

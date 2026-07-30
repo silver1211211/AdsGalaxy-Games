@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2, Upload } from "lucide-react";
+import { PlatformPopup } from "@/components/system/platform-popup";
+import { readClientApiError } from "@/lib/client-api-error";
 type Button = { id: string; label: string; url: string };
 type Settings = {
   startMessage: string;
@@ -21,19 +23,20 @@ const empty: Settings = {
 export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
   const [s, setS] = useState(empty),
     [message, setMessage] = useState("Loading…"),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}),
+    [popup, setPopup] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     void fetch(`/api/${tenantSlug}/admin/settings`, { cache: "no-store" })
       .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(
-            response.status === 401 || response.status === 403
-              ? "An Admin session is required. Open /dev/access and sign in as Admin."
-              : (body.error ?? "Settings could not be loaded."),
-          );
+          const apiError = await readClientApiError(response, "Settings could not be loaded.");
+          throw new Error(response.status === 401 || response.status === 403
+            ? "Your Administrator session has expired. Sign in again."
+            : apiError.error);
         }
+        const body = await response.json();
         if (active) {
           setS({ ...empty, ...body });
           setMessage("");
@@ -76,6 +79,7 @@ export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
   async function save() {
     if (busy) return;
     setBusy(true);
+    setFieldErrors({});
     setMessage("Saving…");
     const body = {
       startMessage: s.startMessage || null,
@@ -88,14 +92,20 @@ export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      }),
-      x = await r.json();
-    if (r.ok) setS({ ...s, ...x });
-    setMessage(
-      r.ok
-        ? "Settings saved and audit logged."
-        : (x.error ?? "Could not save."),
-    );
+      });
+    if (r.ok) {
+      const saved = await r.json();
+      setS({ ...s, ...saved });
+      setMessage("Settings saved and audit logged.");
+    } else {
+      const apiError = await readClientApiError(
+        r,
+        "Settings could not be saved. Try again.",
+      );
+      setFieldErrors(apiError.fieldErrors);
+      setMessage("");
+      setPopup(apiError.error);
+    }
     setBusy(false);
   }
   async function upload(file: File) {
@@ -105,10 +115,15 @@ export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
     const r = await fetch(`/api/${tenantSlug}/admin/settings/start-image`, {
         method: "POST",
         body,
-      }),
-      x = await r.json();
-    if (r.ok) setS({ ...s, startImageConfigured: true });
-    setMessage(r.ok ? "Start image saved." : x.error);
+      });
+    if (r.ok) {
+      setS({ ...s, startImageConfigured: true });
+      setMessage("Start image saved.");
+    } else {
+      const apiError = await readClientApiError(r, "The image could not be uploaded.");
+      setMessage("");
+      setPopup(apiError.error);
+    }
   }
   async function removeImage() {
     const r = await fetch(`/api/${tenantSlug}/admin/settings/start-image`, {
@@ -301,6 +316,11 @@ export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
             rows={3}
             className="mt-1 w-full rounded-2xl border p-3 text-sm"
           />
+          {fieldErrors.maintenanceMessage && (
+            <span className="mt-2 block text-xs font-bold text-coral-600">
+              {fieldErrors.maintenanceMessage}
+            </span>
+          )}
         </label>
       </section>
       <button
@@ -317,6 +337,15 @@ export function GeneralSettingsForm({ tenantSlug }: { tenantSlug: string }) {
       >
         {message}
       </p>
+      {popup && (
+        <PlatformPopup
+          title="Settings not saved"
+          message={popup}
+          dismissible
+          onClose={() => setPopup(null)}
+          primary={{ label: "Review settings", onClick: () => setPopup(null) }}
+        />
+      )}
     </div>
   );
 }

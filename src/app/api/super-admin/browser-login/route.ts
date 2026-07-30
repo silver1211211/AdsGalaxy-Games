@@ -26,10 +26,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) {
       return Response.json(
-        { error: browserLoginErrorMessage(error.status) },
+        { error: browserLoginErrorMessage(error.status), code: error.status === 429 ? "RATE_LIMITED" : "REQUEST_REJECTED" },
         { status: error.status },
       );
     }
-    return Response.json({ error: GENERIC_LOGIN_ERROR }, { status: 401 });
+    return Response.json({ error: GENERIC_LOGIN_ERROR, code: "INVALID_CREDENTIALS" }, { status: 401 });
   }
 }

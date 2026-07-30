@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { readClientApiError } from "@/lib/client-api-error";
 
 export function MiniAppRequestActions({ requestId, status }: { requestId: string; status: string }) {
   const router = useRouter();
@@ -18,8 +19,12 @@ export function MiniAppRequestActions({ requestId, status }: { requestId: string
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, publicMessage: message || undefined, privateNote: privateNote || undefined }),
     });
-    const body = await response.json();
-    setResult(response.ok ? "Request updated." : body.error);
+    if (!response.ok) {
+      const apiError = await readClientApiError(response, "Request could not be updated.");
+      setResult(apiError.error);
+      return;
+    }
+    setResult("Request updated.");
     if (response.ok) router.refresh();
   }
 
@@ -31,15 +36,16 @@ export function MiniAppRequestActions({ requestId, status }: { requestId: string
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ administratorTelegramId }),
     });
-    const body = await response.json();
     if (!response.ok) {
-      setResult(body.error + (body.diagnosticReference ? ` (${body.diagnosticReference})` : ""));
+      const apiError = await readClientApiError(response, "Approval could not be completed.");
+      setResult(apiError.error);
       return;
     }
+    const body = await response.json();
     setResult([
-      `Public: ${body.urls.miniApp}`,
-      `Admin: ${body.urls.admin}`,
-      `Login: ${body.urls.login}`,
+      `Public Mini App URL: ${body.urls.public}`,
+      `Administrator Login URL: ${body.urls.administratorLogin}`,
+      `Administrator Dashboard URL: ${body.urls.administratorDashboard}`,
       body.temporaryPassword
         ? `Temporary password (shown once): ${body.temporaryPassword}`
         : "Existing Administrator credential retained.",

@@ -63,6 +63,14 @@ async function hasValidSignedSession(request: NextRequest) {
 
 export async function middleware(request: NextRequest) {
   if (middlewareExcluded(request.nextUrl.pathname)) return NextResponse.next();
+  const administratorLogin = request.nextUrl.pathname.match(
+    /^\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\/admin\/login\/?$/,
+  );
+  if (administratorLogin) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = `/${administratorLogin[1]}/administrator-login`;
+    return NextResponse.rewrite(destination);
+  }
   const localDirect =
     developmentAuthAllowed(request.headers.get("host")) &&
     process.env.ALLOW_DEVELOPMENT_DIRECT_ACCESS === "true";
