@@ -6,6 +6,7 @@ import {
   loginIdentifierHash,
   requestIpHash,
 } from "@/features/super-admin/browser-auth";
+import { browserLoginErrorMessage } from "@/features/super-admin/browser-auth-policy";
 
 const schema = z.object({
   password: z.string().min(1).max(256),
@@ -24,9 +25,10 @@ export async function POST(request: Request) {
     return Response.json(await authenticateSuperAdminBrowser({ password: input.password, request }));
   } catch (error) {
     if (error instanceof Response) {
-      if (error.status === 429)
-        return Response.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
-      return error;
+      return Response.json(
+        { error: browserLoginErrorMessage(error.status) },
+        { status: error.status },
+      );
     }
     return Response.json({ error: GENERIC_LOGIN_ERROR }, { status: 401 });
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   browserLoginDestination,
+  browserLoginErrorMessage,
   configuredSuperAdminIdentifier,
   superAdminBrowserSessionBinding,
   superAdminLoginEligibility,
@@ -17,6 +18,12 @@ const eligible = {
 };
 
 describe("Super Admin browser authentication policy", () => {
+  it("maps login HTTP failures to structured safe messages", () => {
+    expect(browserLoginErrorMessage(403)).toBe("Request origin could not be verified.");
+    expect(browserLoginErrorMessage(415)).toBe("Unsupported request format.");
+    expect(browserLoginErrorMessage(413)).toBe("Request body is too large.");
+    expect(browserLoginErrorMessage(429)).toBe("Too many login attempts. Try again later.");
+  });
   it("resolves exactly one configured numeric identifier server-side", () => {
     expect(configuredSuperAdminIdentifier("123456789")).toBe("123456789");
     expect(configuredSuperAdminIdentifier("123456789,987654321")).toBeNull();

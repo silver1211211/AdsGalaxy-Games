@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { PlatformPopup } from "@/components/system/platform-popup";
+import { parseBrowserLoginResponse } from "./login-response";
 
 export function SuperAdminBrowserLoginForm() {
   const [password, setPassword] = useState("");
@@ -19,9 +20,13 @@ export function SuperAdminBrowserLoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      const body = await response.json();
+      const body = await parseBrowserLoginResponse(response);
       if (!response.ok) {
-        setError(body.error ?? "Invalid password or account unavailable.");
+        setError(body.error ?? "Sign-in could not be completed. Try again.");
+        return;
+      }
+      if (!body.destination) {
+        setError("Sign-in could not be completed. Try again.");
         return;
       }
       location.assign(body.destination);
@@ -65,9 +70,6 @@ export function SuperAdminBrowserLoginForm() {
               {busy ? "Verifying…" : "Secure Sign In"}
             </button>
           </form>
-          <p className="sa-muted mt-6 text-xs">
-            Telegram Mini App authentication is not required for this dashboard.
-          </p>
         </section>
       </main>
       {error && (

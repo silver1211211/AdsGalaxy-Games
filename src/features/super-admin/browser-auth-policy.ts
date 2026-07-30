@@ -1,5 +1,14 @@
 export const GENERIC_LOGIN_ERROR = "Invalid password or account unavailable.";
 
+export function browserLoginErrorMessage(status: number) {
+  return ({
+    403: "Request origin could not be verified.",
+    413: "Request body is too large.",
+    415: "Unsupported request format.",
+    429: "Too many login attempts. Try again later.",
+  } as Record<number, string>)[status] ?? GENERIC_LOGIN_ERROR;
+}
+
 export function configuredSuperAdminIdentifier(value: string | undefined) {
   const identifiers = (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
   return identifiers.length === 1 && /^\d{5,20}$/.test(identifiers[0])
